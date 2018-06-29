@@ -17,7 +17,7 @@
 FifteenStep seq = FifteenStep();
 MIDI_CREATE_DEFAULT_INSTANCE();
 // save button state
-bool debug = true;
+bool debug = false;
 byte setPin = 12;
 byte btnPin = 13;
 byte playPin = 11;
@@ -27,15 +27,17 @@ bool setButtonPressed = false;
 bool playButtonPressed = false;
 bool stopped = false;
 bool gate[8];
-bool transported[8];
+//bool transported[8];
 byte ledPins[8] = {2,3,4,5,6,7,8,9};
 
 int activeStep= -1;
 int oldcurrent=0;
 char   buffer[20];
 
+void fakeMidiEvent(byte channel, byte command, byte arg1, byte arg2) {
+  //NOTHING
+}
 void midiEvent(byte channel, byte command, byte arg1, byte arg2) {
-
   if(command < 128) {
     // shift over command
     command <<= 4;
@@ -57,14 +59,14 @@ void midiEvent(byte channel, byte command, byte arg1, byte arg2) {
 }
 
 void blinkPin(byte pin, byte maxPin) {
-  digitalWrite(pin+2,HIGH);
-  digitalWrite(maxPin+2,LOW);
+  digitalWrite(ledPins[pin],HIGH);
+  digitalWrite(ledPins[maxPin],LOW);
   for(int i = 0; i < stepSize; i++) {
     if(gate[i] == true) {
-      digitalWrite(i+2,HIGH);
+      digitalWrite(ledPins[i],HIGH);
     } else {
-      if(i != activeStep) {
-        digitalWrite(i+2,LOW);
+      if(i != pin) {
+        digitalWrite(ledPins[i],LOW);
       }
     }
   }
@@ -90,35 +92,43 @@ void nextStep() {
   }
 }
 void step(int current, int last) {
-  if(activeStep = (-1)) {
-    activeStep = last;
+  int unblink = current -1;
+  if(current == 0){
+    unblink = 7;
   }
-  // blink on even steps
-  //blinkPin(current,last);
+  blinkPin(current,unblink);
+  if(activeStep = (-1)) {
+    activeStep = current;
+  }
   if(debug){
     sprintf(buffer,"current %d",current);
     Serial.println(buffer);
   }
   if(current != oldcurrent){
-    nextStep();
-    if(transported[current] == false) {
+    //nextStep();
+    //if(transported[current] == false) {
       if(gate[current] == true) {
         if(debug){
           sprintf(buffer,"setNote %d",current);
           Serial.println(buffer);
 
         }
-        seq.setNote(0x0, 0x3C, 0x40);
+        //seq.setNote(0x0, 0x3C, 0x40);
+        midiEvent(0x0, 0x9, 0x3C, 0x40);
+
       }else {
-        sprintf(buffer,"delNote %d",current);
-        Serial.println(buffer);
-        seq.setNote(0x0, 0x0, 0x0);
+        if(debug) {
+          sprintf(buffer,"delNote %d",current);
+          Serial.println(buffer);
+        }
+        //seq.setNote(0x0, 0x0, 0x0);
         //seq.setNote(0x0, 0x3C, 0x40);
       }
-      transported[current]= true;
-    }
-    oldcurrent =current;
+    //  transported[current]= true;
+
+
   }
+  oldcurrent =current;
 }
 
 
@@ -143,7 +153,7 @@ void setup() {
 
 for(int i=0;i<stepSize;i++) {
   gate[i] = false;
-  transported[i] = true;
+  //transported[i] = true;
 }
   // initialize digital pin 4 as an input for a button
   pinMode(btnPin, INPUT);
@@ -151,7 +161,7 @@ for(int i=0;i<stepSize;i++) {
 
   // start sequencer and set callbacks
   seq.begin(80,stepSize);
-  seq.setMidiHandler(midiEvent);
+  seq.setMidiHandler(fakeMidiEvent);
   seq.setStepHandler(step);
 
 }
@@ -182,9 +192,11 @@ void loop() {
     playButtonPressed = false;
   }
   if(nextbutton == LOW && setbutton == HIGH && setButtonPressed == false) {
-    midiEvent(0x0, 0x9, 0x3C, 0x40);
+    if(stopped) {
+      midiEvent(0x0, 0x9, 0x3C, 0x40);
+    }
     gate[activeStep] = !gate[activeStep];
-    transported[activeStep] = !transported[activeStep];
+  //  transported[activeStep] = !transported[activeStep];
     if(debug) {
       Serial.println(activeStep);
       Serial.println(gate[activeStep]);

@@ -28,6 +28,7 @@ bool playButtonPressed = false;
 bool stopped = false;
 bool gate[8];
 bool transported[8];
+byte ledPins[8] = {2,3,4,5,6,7,8,9};
 
 int activeStep= -1;
 int oldcurrent=0;

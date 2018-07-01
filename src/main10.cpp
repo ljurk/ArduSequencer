@@ -14,21 +14,25 @@ byte setPin = 11;
 byte nextPin = 12;
 //byte prevPin = 11;
 byte noteUpPin = 13;
-byte prevPin = 10;
+byte noteDownPin = 10;
 byte stepSize = 8;
 //buttons
 bool nextButtonPressed = false;
 bool setButtonPressed = false;
-bool prevButtonPressed = false;
+bool noteDownButtonPressed = false;
+bool noteUpButtonPressed = false;
+
 bool nextButtonState = false;
 bool setButtonState = false;
-bool prevButtonState = false;
+bool noteDownButtonState = false;
+bool noteUpButtonState = false;
 //time to let choosen step blink without delay
 unsigned int time;
 unsigned int oldTime;
 
 bool stopped = false;
 bool gate[8];
+byte notes[8];
 byte ledPins[8] = {2,3,4,5,6,7,8,9};
 
 byte activeStep= 0;
@@ -84,10 +88,10 @@ void activeMenuBlink(){
   time = millis();
   if(time > oldTime + 250) {
     if(activeMenuLedState == true) {
-      if(gate[activeMenuStep] == false) {
+      //if(gate[activeMenuStep] == false) {
         digitalWrite(ledPins[activeMenuStep],LOW);
         activeMenuLedState = false;
-      }
+      //}
       if(debug){
         sprintf(buffer,"menuOn %d",activeMenuStep);
         Serial.println(buffer);
@@ -156,8 +160,6 @@ void prevStep() {
 }
 
 void step() {
-
-
   if(activeStep ==7){
     activeStep=0;
   } else {
@@ -180,8 +182,7 @@ void step() {
     }
     //seq.setNote(0x0, 0x3C, 0x40);
     //sendMidi(0x0, 0x9, 0x3C, 0x40);
-    sendMidi(0,9,60,64);
-
+    sendMidi(0,9,notes[activeStep],64);
   }
 }
 
@@ -189,18 +190,35 @@ void checkButtons(){
   // read the state of the buttons
   nextButtonState = digitalRead(nextPin);
   setButtonState = digitalRead(setPin);
-  prevButtonState = digitalRead(prevPin);
+  noteDownButtonState = digitalRead(noteDownPin);
+  noteUpButtonState = digitalRead(noteUpPin);
 
-  if(prevButtonState == HIGH && prevButtonPressed == false) {
-    prevButtonPressed = true;
+  //check noteDown
+  if(noteDownButtonState == HIGH && noteDownButtonPressed == false) {
+    noteDownButtonPressed = true;
     if(debug) {
-      Serial.println("PRESS PREV");
+      Serial.println("NoteDown");
     }
-    prevStep();
+    //prevStep();
+    notes[activeMenuStep] = notes[activeMenuStep] - 1;
   }
-  if(prevButtonState == LOW) {
-    prevButtonPressed = false;
+  if(noteDownButtonState == LOW) {
+    noteDownButtonPressed = false;
   }
+  //check NoteUp
+  if(noteUpButtonState == HIGH && noteUpButtonPressed == false) {
+    noteUpButtonPressed = true;
+    if(debug) {
+      Serial.println("noteUp");
+    }
+    //prevStep();
+    notes[activeMenuStep] = notes[activeMenuStep] + 1;
+  }
+  if(noteUpButtonState == LOW) {
+    noteUpButtonPressed = false;
+  }
+
+
   if(nextButtonState == LOW && setButtonState == HIGH && setButtonPressed == false) {
     if(stopped) {
       sendMidi(0x0, 0x9, 0x3C, 0x40);
@@ -240,13 +258,13 @@ void setup() {
   for(int i=0;i<stepSize;i++) {
     gate[i] = false;
     pinMode(ledPins[i],OUTPUT);
+    notes[i] = 60;
   }
   // initialize button pins
   pinMode(nextPin, INPUT);
   pinMode(setPin,INPUT);
-  pinMode(prevPin, INPUT);
-  gate[0] = true;
-  gate[4] = true;
+  pinMode(noteDownPin, INPUT);
+  pinMode(noteUpPin, INPUT);
 }
 
 void loop() {
@@ -264,6 +282,7 @@ void loop() {
 
     if (byte_read == MIDI_STOP) {
       stopped = true;
+      blinkPin(0, activeStep);
       activeStep=0;
       count = 0;
     }

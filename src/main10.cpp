@@ -1,39 +1,43 @@
 #include <Arduino.h>
 
+//for MIDI IN
 #define MIDI_START 250
 #define MIDI_STOP 252
 #define MIDI_CONT 251
 #define MIDI_CLOCK 248
+//for MIDI OUT
+#define DEFAULT_NOTE 60
+#define STEP_LENGTH 8
+
 //for midi in
 int count = 0; // Zählvariable in einer Viertelnote werden 24 MIDI-Clock signale gesendet
 byte speed = 2; //1=24ticks,2=12ticks,4=6ticks
 //true disables midi, and writes on 9600 baud
 bool debug = false;
 // save button
-byte setPin = 11;
-byte nextPin = 12;
-//byte prevPin = 11;
-byte noteUpPin = 13;
-byte noteDownPin = 10;
-byte stepSize = 8;
-//buttons
-bool nextButtonPressed = false;
-bool setButtonPressed = false;
-bool noteDownButtonPressed = false;
-bool noteUpButtonPressed = false;
+byte setSlidePin = 11;
+byte funcPin = 12;
+byte noteUpDownPin = 13;
+byte nextPrevPin = 10;
 
-bool nextButtonState = false;
-bool setButtonState = false;
-bool noteDownButtonState = false;
-bool noteUpButtonState = false;
+//buttons
+bool nextPrevButtonPressed = false;
+bool setSlideButtonPressed = false;
+bool noteUpDownButtonPressed = false;
+bool funcButtonPressed = false;
+
+bool nextPrevButtonState = false;
+bool setSlideButtonState = false;
+bool noteUpDownButtonState = false;
+bool funcButtonState = false;
 //time to let choosen step blink without delay
 unsigned int time;
 unsigned int oldTime;
 
 bool stopped = false;
-bool gate[8];
-byte notes[8];
-byte ledPins[8] = {2,3,4,5,6,7,8,9};
+bool gate[STEP_LENGTH];
+byte notes[STEP_LENGTH];
+byte ledPins[STEP_LENGTH] = {2,3,4,5,6,7,8,9};
 
 byte activeStep= 0;
 byte oldStep= 0;
@@ -64,24 +68,10 @@ void sendMidi(byte channel, byte command, byte arg1, byte arg2) {
 
 void blinkPin(byte blink, byte unblink) {
   digitalWrite(ledPins[blink],HIGH);
-
   if(gate[unblink] == false) {
     digitalWrite(ledPins[unblink],LOW);
   }
 
-}
-
-void stepLed(){
-  for(int i = 0; i < stepSize; i++) {
-    if(gate[i] == true) {
-        digitalWrite(ledPins[i],HIGH);
-
-    } else {
-      if (i != activeStep || i != activeMenuStep){
-        digitalWrite(ledPins[i],LOW);
-      }
-    }
-  }
 }
 
 void activeMenuBlink(){
@@ -111,7 +101,7 @@ void activeMenuBlink(){
 
 void nextStep() {
     oldMenuStep= activeMenuStep;
-    if(activeMenuStep == stepSize - 1) {
+    if(activeMenuStep == STEP_LENGTH - 1) {
       activeMenuStep = 0;
     }else{
       activeMenuStep++;
@@ -137,7 +127,7 @@ void nextStep() {
 void prevStep() {
     oldMenuStep= activeMenuStep;
     if(activeMenuStep == 0) {
-      activeMenuStep = 7;
+      activeMenuStep = STEP_LENGTH - 1;
     }else{
       activeMenuStep--;
     }
@@ -188,60 +178,73 @@ void step() {
 
 void checkButtons(){
   // read the state of the buttons
-  nextButtonState = digitalRead(nextPin);
-  setButtonState = digitalRead(setPin);
-  noteDownButtonState = digitalRead(noteDownPin);
-  noteUpButtonState = digitalRead(noteUpPin);
+  nextPrevButtonState = digitalRead(nextPrevPin);
+  setSlideButtonState = digitalRead(setSlidePin);
+  noteUpDownButtonState = digitalRead(noteUpDownPin);
+  funcButtonState = digitalRead(funcPin);
 
-  //check noteDown
-  if(noteDownButtonState == HIGH && noteDownButtonPressed == false) {
-    noteDownButtonPressed = true;
-    if(debug) {
-      Serial.println("NoteDown");
+  //check noteUpDown
+  if(noteUpDownButtonState == HIGH && noteUpDownButtonPressed == false) {
+    if(funcButtonState == true) {
+      //NoteDown
+      if(debug) {
+        Serial.println("NoteDown");
+      }
+      notes[activeMenuStep] = notes[activeMenuStep] - 1;
+    }else {
+      //NoteUp
+      if(debug) {
+        Serial.println("NoteUp");
+      }
+      notes[activeMenuStep] = notes[activeMenuStep] + 1;
     }
-    //prevStep();
-    notes[activeMenuStep] = notes[activeMenuStep] - 1;
+    noteUpDownButtonPressed = true;
+
   }
-  if(noteDownButtonState == LOW) {
-    noteDownButtonPressed = false;
-  }
-  //check NoteUp
-  if(noteUpButtonState == HIGH && noteUpButtonPressed == false) {
-    noteUpButtonPressed = true;
-    if(debug) {
-      Serial.println("noteUp");
-    }
-    //prevStep();
-    notes[activeMenuStep] = notes[activeMenuStep] + 1;
-  }
-  if(noteUpButtonState == LOW) {
-    noteUpButtonPressed = false;
+  if(noteUpDownButtonState == LOW) {
+    noteUpDownButtonPressed = false;
   }
 
 
-  if(nextButtonState == LOW && setButtonState == HIGH && setButtonPressed == false) {
-    if(stopped) {
-      sendMidi(0x0, 0x9, 0x3C, 0x40);
+  if(setSlideButtonState == HIGH && setSlideButtonPressed == false) {
+    if(funcButtonState == true) {
+      //slide
+      //have to work with note off, and a slide array, if slide is set, note off shouldnt be sent for next step
+    } else {
+      //set
+      if(stopped) {
+        sendMidi(0x0, 0x9, 0x3C, 0x40);
+      }
+      gate[activeMenuStep] = !gate[activeMenuStep];
+      if(debug) {
+        Serial.println(activeMenuStep);
+        Serial.println(gate[activeStep]);
+      }
     }
-    gate[activeMenuStep] = !gate[activeMenuStep];
-    if(debug) {
-      Serial.println(activeMenuStep);
-      Serial.println(gate[activeStep]);
+
+    setSlideButtonPressed = true;
+  }
+  if(setSlideButtonState ==LOW) {
+    setSlideButtonPressed = false;
+  }
+  if(nextPrevButtonState == HIGH && nextPrevButtonPressed==false ) {
+    if(funcButtonState == true) {
+      //previous Step
+      if(debug) {
+        Serial.println("PRESS PREV");
+      }
+      prevStep();
+    } else {
+      //next Step
+      if(debug) {
+        Serial.println("PRESS NEXT");
+      }
+      nextStep();
     }
-    setButtonPressed = true;
+    nextPrevButtonPressed = true;
   }
-  if(setButtonState ==LOW) {
-    setButtonPressed = false;
-  }
-  if(nextButtonState == HIGH && setButtonState == LOW && nextButtonPressed==false ) {
-    nextButtonPressed = true;
-    if(debug) {
-      Serial.println("PRESS NEXT");
-    }
-    nextStep();
-  }
-  if(nextButtonState == LOW) {
-    nextButtonPressed = false;
+  if(nextPrevButtonState == LOW) {
+    nextPrevButtonPressed = false;
   }
 }
 
@@ -255,22 +258,21 @@ void setup() {
     Serial.begin(31250);
   }
 
-  for(int i=0;i<stepSize;i++) {
+  for(int i=0;i<STEP_LENGTH;i++) {
     gate[i] = false;
     pinMode(ledPins[i],OUTPUT);
-    notes[i] = 60;
+    notes[i] = DEFAULT_NOTE;
   }
   // initialize button pins
-  pinMode(nextPin, INPUT);
-  pinMode(setPin,INPUT);
-  pinMode(noteDownPin, INPUT);
-  pinMode(noteUpPin, INPUT);
+  pinMode(nextPrevPin, INPUT);
+  pinMode(setSlidePin,INPUT);
+  pinMode(noteUpDownPin, INPUT);
+  pinMode(funcPin, INPUT);
 }
 
 void loop() {
   //blinkPin(activeStep, activeStep-1);
   checkButtons();
-  //stepLed(); to slow
   activeMenuBlink();
   if (Serial.available()  > 0) {
     byte byte_read = Serial.read();

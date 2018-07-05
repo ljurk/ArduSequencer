@@ -8,18 +8,18 @@
 //for MIDI OUT
 #define DEFAULT_NOTE 60
 #define STEP_LENGTH 8
+//buttons
+#define SET_SLIDE_PIN  11
+#define FUNC_PIN 12
+#define  NOTE_UP_DOWN_PIN 13
+#define NEXT_PREV_PIN 10
+#define BLINK_TIME 250
 
 //for midi in
-int count = 0; // Zählvariable in einer Viertelnote werden 24 MIDI-Clock signale gesendet
-byte speed = 2; //1=24ticks,2=12ticks,4=6ticks
-//true disables midi, and writes on 9600 baud
+int count = 0; // counter for midi ticks, 24 ticks are one quarter note
+byte speedDivider = 2; //1=24ticks,2=12ticks,4=6ticks
+//true disables midi, and writes debug messages on 9600 baud
 bool debug = false;
-// save button
-byte setSlidePin = 11;
-byte funcPin = 12;
-byte noteUpDownPin = 13;
-byte nextPrevPin = 10;
-
 //buttons
 bool nextPrevButtonPressed = false;
 bool setSlideButtonPressed = false;
@@ -44,7 +44,7 @@ byte oldStep= 0;
 byte oldMenuStep= 0;
 byte activeMenuStep=0;
 bool activeMenuLedState = false;
-char   buffer[20];
+char buffer[20];
 
 void sendMidi(byte channel, byte command, byte arg1, byte arg2) {
   if(command < 128) {
@@ -71,21 +71,18 @@ void blinkPin(byte blink, byte unblink) {
   if(gate[unblink] == false) {
     digitalWrite(ledPins[unblink],LOW);
   }
-
 }
 
 void activeMenuBlink(){
   time = millis();
-  if(time > oldTime + 250) {
+  if(time > oldTime + BLINK_TIME) {
     if(activeMenuLedState == true) {
-      //if(gate[activeMenuStep] == false) {
         digitalWrite(ledPins[activeMenuStep],LOW);
         activeMenuLedState = false;
-      //}
-      if(debug){
-        sprintf(buffer,"menuOn %d",activeMenuStep);
-        Serial.println(buffer);
-      }
+        if(debug){
+          sprintf(buffer,"menuOn %d",activeMenuStep);
+          Serial.println(buffer);
+        }
     }else {
       if(debug){
         sprintf(buffer,"menuOff %d",activeMenuStep);
@@ -96,7 +93,6 @@ void activeMenuBlink(){
     }
     oldTime = time;
   }
-
 }
 
 void nextStep() {
@@ -110,7 +106,6 @@ void nextStep() {
       sprintf(buffer,"active %d",activeStep);
       Serial.println(buffer);
     }
-    //blinkPin(activeMenuStep,oldMenuStep);
     if(gate[oldMenuStep]) {
       digitalWrite(ledPins[oldMenuStep],HIGH);
     }else{
@@ -140,7 +135,6 @@ void prevStep() {
     }else{
       digitalWrite(ledPins[oldMenuStep],LOW);
     }
-    //blinkPin(activeMenuStep,oldMenuStep);
     if(gate[activeMenuStep] && stopped) {
       if(debug){
         Serial.print(activeMenuStep);
@@ -170,18 +164,16 @@ void step() {
       sprintf(buffer,"sendNote %d",activeStep);
       Serial.println(buffer);
     }
-    //seq.setNote(0x0, 0x3C, 0x40);
-    //sendMidi(0x0, 0x9, 0x3C, 0x40);
     sendMidi(0,9,notes[activeStep],64);
   }
 }
 
 void checkButtons(){
   // read the state of the buttons
-  nextPrevButtonState = digitalRead(nextPrevPin);
-  setSlideButtonState = digitalRead(setSlidePin);
-  noteUpDownButtonState = digitalRead(noteUpDownPin);
-  funcButtonState = digitalRead(funcPin);
+  nextPrevButtonState = digitalRead(NEXT_PREV_PIN);
+  setSlideButtonState = digitalRead(SET_SLIDE_PIN);
+  noteUpDownButtonState = digitalRead(NOTE_UP_DOWN_PIN);
+  funcButtonState = digitalRead(FUNC_PIN);
 
   //check noteUpDown
   if(noteUpDownButtonState == HIGH && noteUpDownButtonPressed == false) {
@@ -199,12 +191,10 @@ void checkButtons(){
       notes[activeMenuStep] = notes[activeMenuStep] + 1;
     }
     noteUpDownButtonPressed = true;
-
   }
   if(noteUpDownButtonState == LOW) {
     noteUpDownButtonPressed = false;
   }
-
 
   if(setSlideButtonState == HIGH && setSlideButtonPressed == false) {
     if(funcButtonState == true) {
@@ -264,10 +254,10 @@ void setup() {
     notes[i] = DEFAULT_NOTE;
   }
   // initialize button pins
-  pinMode(nextPrevPin, INPUT);
-  pinMode(setSlidePin,INPUT);
-  pinMode(noteUpDownPin, INPUT);
-  pinMode(funcPin, INPUT);
+  pinMode(NEXT_PREV_PIN, INPUT);
+  pinMode(SET_SLIDE_PIN,INPUT);
+  pinMode(NOTE_UP_DOWN_PIN, INPUT);
+  pinMode(FUNC_PIN, INPUT);
 }
 
 void loop() {
@@ -295,14 +285,10 @@ void loop() {
 
     if (byte_read == MIDI_CLOCK && stopped == false) {
       count++;
-      if (count == (24 / speed)) {
+      if (count == (24 / speedDivider)) {
         step();
         count = 0;
       }
     }
   }
-
-/*  if (count > (24 / speed)) {
-    count = 0;
-  }*/
 }

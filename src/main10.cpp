@@ -10,14 +10,14 @@
 #define NOTE_OFF 8
 #define NOTE_ON 9
 #define DEFAULT_VELOCITY 64
-#define DEFAULT_NOTE 60
+#define DEFAULT_NOTE 0
 #define STEP_LENGTH 8
 //buttons
 #define SET_SLIDE_PIN  11
 #define FUNC_PIN 12
 #define  NOTE_UP_DOWN_PIN 13
 #define NEXT_PREV_PIN 10
-#define BLINK_TIME 250
+#define BLINK_TIME 150
 
 //for midi in
 int count = 0; // counter for midi ticks, 24 ticks are one quarter note
@@ -41,7 +41,8 @@ unsigned int oldTime;
 bool stopped = false;
 bool gate[STEP_LENGTH];
 byte notes[STEP_LENGTH];
-byte ledPins[STEP_LENGTH] = {2,3,4,5,6,7,8,9};
+bool slide[STEP_LENGTH];
+byte ledPins[STEP_LENGTH] = {9,8,7,6,5,4,3,2};
 
 byte activeStep= 0;
 byte oldStep= 0;
@@ -119,7 +120,7 @@ void nextStep() {
       if(debug){
         Serial.print(activeMenuStep);
       }
-      sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeMenuStep], DEFAULT_VELOCITY);
+      //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeMenuStep], DEFAULT_VELOCITY);
     }
   }
 
@@ -143,7 +144,7 @@ void prevStep() {
       if(debug){
         Serial.print(activeMenuStep);
       }
-      sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeMenuStep], DEFAULT_VELOCITY);
+      //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeMenuStep], DEFAULT_VELOCITY);
     }
 }
 
@@ -157,6 +158,9 @@ void step() {
      oldStep = 7;
    } else {
      oldStep = activeStep -1;
+   }
+   if(gate[oldStep] && !slide[activeStep]) {
+     sendMidi(MIDI_CHANNEL,NOTE_OFF,notes[oldStep],DEFAULT_VELOCITY);
    }
   if(debug){
     sprintf(buffer,"current %d",activeStep);
@@ -203,11 +207,12 @@ void checkButtons(){
   if(setSlideButtonState == HIGH && setSlideButtonPressed == false) {
     if(funcButtonState == true) {
       //slide
+      slide[activeMenuStep] = !slide[activeMenuStep];
       //have to work with note off, and a slide array, if slide is set, note off shouldnt be sent for next step
     } else {
       //set
       if(stopped) {
-        sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeMenuStep], DEFAULT_VELOCITY);
+        //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeMenuStep], DEFAULT_VELOCITY);
       }
       gate[activeMenuStep] = !gate[activeMenuStep];
       if(debug) {
@@ -259,7 +264,9 @@ void setup() {
     gate[i] = false;
     pinMode(ledPins[i],OUTPUT);
     notes[i] = DEFAULT_NOTE;
+    slide[i] = false;
   }
+
   // initialize button pins
   pinMode(NEXT_PREV_PIN, INPUT);
   pinMode(SET_SLIDE_PIN,INPUT);
@@ -281,6 +288,7 @@ void loop() {
     if (byte_read == MIDI_STOP) {
       stopped = true;
       blinkPin(0, activeStep);
+      sendMidi(MIDI_CHANNEL,NOTE_OFF,notes[0],DEFAULT_VELOCITY);
       activeStep=0;
       count = 0;
     }

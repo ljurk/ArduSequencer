@@ -6,6 +6,10 @@
 #define MIDI_CONT 251
 #define MIDI_CLOCK 248
 //for MIDI OUT
+#define MIDI_CHANNEL 0 //0-15 represents channels 1-16
+#define NOTE_OFF 8
+#define NOTE_ON 9
+#define DEFAULT_VELOCITY 64
 #define DEFAULT_NOTE 60
 #define STEP_LENGTH 8
 //buttons
@@ -115,7 +119,7 @@ void nextStep() {
       if(debug){
         Serial.print(activeMenuStep);
       }
-      sendMidi(0x0, 0x9, 0x3C, 0x40);
+      sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeMenuStep], DEFAULT_VELOCITY);
     }
   }
 
@@ -139,7 +143,7 @@ void prevStep() {
       if(debug){
         Serial.print(activeMenuStep);
       }
-      sendMidi(0x0, 0x9, 0x3C, 0x40);
+      sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeMenuStep], DEFAULT_VELOCITY);
     }
 }
 
@@ -164,7 +168,7 @@ void step() {
       sprintf(buffer,"sendNote %d",activeStep);
       Serial.println(buffer);
     }
-    sendMidi(0,9,notes[activeStep],64);
+    sendMidi(MIDI_CHANNEL,NOTE_ON,notes[activeStep],DEFAULT_VELOCITY);
   }
 }
 
@@ -203,7 +207,7 @@ void checkButtons(){
     } else {
       //set
       if(stopped) {
-        sendMidi(0x0, 0x9, 0x3C, 0x40);
+        sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeMenuStep], DEFAULT_VELOCITY);
       }
       gate[activeMenuStep] = !gate[activeMenuStep];
       if(debug) {
@@ -239,15 +243,18 @@ void checkButtons(){
 }
 
 void setup() {
-  // set MIDI baud
+
   time =millis();
   oldTime=time;
   if(debug) {
+    //set baud rate for serial monitor
     Serial.begin(9600);
   }else{
+    // set MIDI baud
     Serial.begin(31250);
   }
 
+  //initialize arrays
   for(int i=0;i<STEP_LENGTH;i++) {
     gate[i] = false;
     pinMode(ledPins[i],OUTPUT);
@@ -261,7 +268,6 @@ void setup() {
 }
 
 void loop() {
-  //blinkPin(activeStep, activeStep-1);
   checkButtons();
   activeMenuBlink();
   if (Serial.available()  > 0) {

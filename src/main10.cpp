@@ -38,7 +38,7 @@ bool funcButtonState = false;
 unsigned int time;
 unsigned int oldTime;
 
-bool stopped = false;
+bool stopped = true;
 bool gate[STEP_LENGTH];
 byte notes[STEP_LENGTH];
 bool slide[STEP_LENGTH];
@@ -71,6 +71,13 @@ void sendMidi(byte channel, byte command, byte arg1, byte arg2) {
   }
 }
 
+void resetSequence(){
+  for(byte i = 0; i < STEP_LENGTH;i++){
+    gate[i] = false;
+    slide[i] = false;
+    notes[i] = DEFAULT_NOTE;
+  }
+}
 void blinkPin(byte blink, byte unblink) {
   digitalWrite(ledPins[blink],HIGH);
   if(gate[unblink] == false) {
@@ -84,15 +91,7 @@ void activeMenuBlink(){
     if(activeMenuLedState == true) {
         digitalWrite(ledPins[activeMenuStep],LOW);
         activeMenuLedState = false;
-        if(debug){
-          sprintf(buffer,"menuOn %d",activeMenuStep);
-          Serial.println(buffer);
-        }
     }else {
-      if(debug){
-        sprintf(buffer,"menuOff %d",activeMenuStep);
-        Serial.println(buffer);
-      }
       digitalWrite(ledPins[activeMenuStep],HIGH);
       activeMenuLedState = true;
     }
@@ -160,7 +159,7 @@ void step() {
      oldStep = activeStep -1;
    }
    if(gate[oldStep] && !slide[activeStep]) {
-     sendMidi(MIDI_CHANNEL,NOTE_OFF,notes[oldStep],DEFAULT_VELOCITY);
+     sendMidi(MIDI_CHANNEL,NOTE_ON,notes[oldStep],0);
    }
   if(debug){
     sprintf(buffer,"current %d",activeStep);
@@ -183,6 +182,10 @@ void checkButtons(){
   noteUpDownButtonState = digitalRead(NOTE_UP_DOWN_PIN);
   funcButtonState = digitalRead(FUNC_PIN);
 
+//if all buttons are pressed reset the seuqence
+if(nextPrevButtonState && setSlideButtonState && noteUpDownButtonState && funcButtonPressed){
+  resetSequence();
+}
   //check noteUpDown
   if(noteUpDownButtonState == HIGH && noteUpDownButtonPressed == false) {
     if(funcButtonState == true) {
@@ -212,7 +215,7 @@ void checkButtons(){
     } else {
       //set
       if(stopped) {
-        //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeMenuStep], DEFAULT_VELOCITY);
+        sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeMenuStep], DEFAULT_VELOCITY);
       }
       gate[activeMenuStep] = !gate[activeMenuStep];
       if(debug) {
@@ -222,6 +225,9 @@ void checkButtons(){
     }
 
     setSlideButtonPressed = true;
+  }else if(setSlideButtonState== LOW && setSlideButtonPressed == true) {
+      //sendMidi(MIDI_CHANNEL, NOTE_OFF, notes[activeMenuStep], DEFAULT_VELOCITY);
+      sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeMenuStep], 0);
   }
   if(setSlideButtonState ==LOW) {
     setSlideButtonPressed = false;
@@ -288,7 +294,7 @@ void loop() {
     if (byte_read == MIDI_STOP) {
       stopped = true;
       blinkPin(0, activeStep);
-      sendMidi(MIDI_CHANNEL,NOTE_OFF,notes[0],DEFAULT_VELOCITY);
+      sendMidi(MIDI_CHANNEL,NOTE_ON,notes[0],0);
       activeStep=0;
       count = 0;
     }

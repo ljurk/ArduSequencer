@@ -10,7 +10,6 @@
 #define NOTE_OFF 8
 #define NOTE_ON 9
 #define DEFAULT_VELOCITY 64
-#define DEFAULT_NOTE 0
 #define STEP_LENGTH 8
 //buttons
 #define SET_SLIDE_PIN  11
@@ -21,7 +20,7 @@
 
 //for midi in
 int count = 0; // counter for midi ticks, 24 ticks are one quarter note
-byte speedDivider = 2; //1=24ticks,2=12ticks,4=6ticks
+byte speedDivider = 1; //1=24ticks,2=12ticks,4=6ticks
 //true disables midi, and writes debug messages on 9600 baud
 bool debug = false;
 //buttons
@@ -37,6 +36,7 @@ bool funcButtonState = false;
 //time to let choosen step blink without delay
 unsigned int time;
 unsigned int oldTime;
+byte DEFAULT_NOTE =  0;
 
 bool stopped = true;
 bool gate[STEP_LENGTH];
@@ -107,7 +107,7 @@ void nextStep() {
       activeMenuStep++;
     }
     if(debug){
-      sprintf(buffer,"active %d",activeStep);
+      sprintf(buffer,"active %d",activeMenuStep);
       Serial.println(buffer);
     }
     if(gate[oldMenuStep]) {
@@ -193,11 +193,17 @@ if(nextPrevButtonState && setSlideButtonState && noteUpDownButtonState && funcBu
       if(debug) {
         Serial.println("NoteDown");
       }
+      if(stopped && DEFAULT_NOTE != 0){
+        DEFAULT_NOTE--;
+      }
       notes[activeMenuStep] = notes[activeMenuStep] - 1;
     }else {
       //NoteUp
       if(debug) {
         Serial.println("NoteUp");
+      }
+      if(stopped){
+        DEFAULT_NOTE++;
       }
       notes[activeMenuStep] = notes[activeMenuStep] + 1;
     }
@@ -215,9 +221,13 @@ if(nextPrevButtonState && setSlideButtonState && noteUpDownButtonState && funcBu
     } else {
       //set
       if(stopped) {
-        sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeMenuStep], DEFAULT_VELOCITY);
+        if(debug) {
+          Serial.println("NOTE ON");
+        }
+        sendMidi(MIDI_CHANNEL, NOTE_ON, DEFAULT_NOTE, DEFAULT_VELOCITY);
       }
       gate[activeMenuStep] = !gate[activeMenuStep];
+      notes[activeMenuStep] = DEFAULT_NOTE;
       if(debug) {
         Serial.println(activeMenuStep);
         Serial.println(gate[activeStep]);
@@ -225,13 +235,18 @@ if(nextPrevButtonState && setSlideButtonState && noteUpDownButtonState && funcBu
     }
 
     setSlideButtonPressed = true;
-  }else if(setSlideButtonState== LOW && setSlideButtonPressed == true) {
+  }
+   if(stopped && setSlideButtonState== LOW && setSlideButtonPressed == true) {
+     if(debug) {
+       Serial.println("NOTE OFFN");
+     }
       //sendMidi(MIDI_CHANNEL, NOTE_OFF, notes[activeMenuStep], DEFAULT_VELOCITY);
-      sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeMenuStep], 0);
+      sendMidi(MIDI_CHANNEL, NOTE_ON, DEFAULT_NOTE, 0);
+        setSlideButtonPressed = false;
   }
-  if(setSlideButtonState ==LOW) {
-    setSlideButtonPressed = false;
-  }
+  //if(setSlideButtonState ==LOW) {
+
+  //}
   if(nextPrevButtonState == HIGH && nextPrevButtonPressed==false ) {
     if(funcButtonState == true) {
       //previous Step

@@ -35,7 +35,7 @@ bool noteUpDownButtonState = false;
 bool funcButtonState = false;
 
 unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
-int debounceDelay = 500;
+int debounceDelay = 150;
 //time to let choosen step blink without delay
 unsigned int time;
 unsigned int oldTime;
@@ -308,7 +308,7 @@ void setup() {
 }
 
 void loop() {
-  if(millis() + debounceDelay > lastDebounceTime) {
+  if(millis() - debounceDelay > lastDebounceTime) {
     checkButtons();
   }
   activeMenuBlink();

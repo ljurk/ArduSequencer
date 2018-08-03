@@ -22,7 +22,7 @@
 int count = 0; // counter for midi ticks, 24 ticks are one quarter note
 byte speedDivider = 1; //1=24ticks,2=12ticks,4=6ticks
 //true disables midi, and writes debug messages on 9600 baud
-bool debug = false;
+bool debug = true;
 //buttons
 bool nextPrevButtonPressed = false;
 bool setSlideButtonPressed = false;
@@ -35,7 +35,7 @@ bool noteUpDownButtonState = false;
 bool funcButtonState = false;
 
 unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
-byte debounceDelay = 50;
+int debounceDelay = 500;
 //time to let choosen step blink without delay
 unsigned int time;
 unsigned int oldTime;
@@ -87,7 +87,7 @@ void blinkPin(byte blink, byte unblink) {
     digitalWrite(ledPins[unblink],LOW);
   }
 }
-test
+
 void activeMenuBlink(){
   time = millis();
   if(time > oldTime + BLINK_TIME) {
@@ -219,6 +219,7 @@ if(nextPrevButtonState && setSlideButtonState && noteUpDownButtonState && funcBu
   }
 
   if(setSlideButtonState == HIGH && setSlideButtonPressed == false) {
+    lastDebounceTime = millis();
     if(funcButtonState == true) {
       //slide
       slide[activeMenuStep] = !slide[activeMenuStep];
@@ -242,6 +243,7 @@ if(nextPrevButtonState && setSlideButtonState && noteUpDownButtonState && funcBu
     setSlideButtonPressed = true;
   }
    if(stopped && setSlideButtonState== LOW && setSlideButtonPressed == true) {
+     lastDebounceTime = millis();
      if(debug) {
        Serial.println("NOTE OFFN");
      }
@@ -253,6 +255,7 @@ if(nextPrevButtonState && setSlideButtonState && noteUpDownButtonState && funcBu
 
   //}
   if(nextPrevButtonState == HIGH && nextPrevButtonPressed==false ) {
+    lastDebounceTime = millis();
     if(funcButtonState == true) {
       //previous Step
       if(debug) {
@@ -262,7 +265,10 @@ if(nextPrevButtonState && setSlideButtonState && noteUpDownButtonState && funcBu
     } else {
       //next Step
       if(debug) {
-        Serial.println("PRESS NEXT");
+        if(debug){
+          sprintf(buffer,"next %ld",lastDebounceTime);
+          Serial.println(buffer);
+        }
       }
       nextStep();
     }
@@ -298,10 +304,13 @@ void setup() {
   pinMode(SET_SLIDE_PIN,INPUT);
   pinMode(NOTE_UP_DOWN_PIN, INPUT);
   pinMode(FUNC_PIN, INPUT);
+  lastDebounceTime = millis();
 }
 
 void loop() {
-  checkButtons();
+  if(millis() + debounceDelay > lastDebounceTime) {
+    checkButtons();
+  }
   activeMenuBlink();
   if (Serial.available()  > 0) {
     byte byte_read = Serial.read();

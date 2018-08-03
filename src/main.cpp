@@ -33,6 +33,9 @@ bool nextPrevButtonState = false;
 bool setSlideButtonState = false;
 bool noteUpDownButtonState = false;
 bool funcButtonState = false;
+
+unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
+byte debounceDelay = 50;
 //time to let choosen step blink without delay
 unsigned int time;
 unsigned int oldTime;
@@ -84,7 +87,7 @@ void blinkPin(byte blink, byte unblink) {
     digitalWrite(ledPins[unblink],LOW);
   }
 }
-
+test
 void activeMenuBlink(){
   time = millis();
   if(time > oldTime + BLINK_TIME) {
@@ -185,9 +188,11 @@ void checkButtons(){
 //if all buttons are pressed reset the seuqence
 if(nextPrevButtonState && setSlideButtonState && noteUpDownButtonState && funcButtonPressed){
   resetSequence();
+  lastDebounceTime =millis();
 }
   //check noteUpDown
   if(noteUpDownButtonState == HIGH && noteUpDownButtonPressed == false) {
+    lastDebounceTime = millis();
     if(funcButtonState == true) {
       //NoteDown
       if(debug) {

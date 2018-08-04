@@ -6,7 +6,7 @@
 #define MIDI_CONT 251
 #define MIDI_CLOCK 248
 //for MIDI OUT
-#define MIDI_CHANNEL 0 //0-15 represents channels 1-16
+#define MIDI_CHANNEL 10 //0-15 represents channels 1-16
 #define NOTE_OFF 8
 #define NOTE_ON 9
 #define DEFAULT_VELOCITY 64
@@ -22,7 +22,7 @@
 int count = 0; // counter for midi ticks, 24 ticks are one quarter note
 byte speedDivider = 1; //1=24ticks,2=12ticks,4=6ticks
 //true disables midi, and writes debug messages on 9600 baud
-bool debug = true;
+bool debug = false;
 //buttons
 bool nextPrevButtonPressed = false;
 bool setSlideButtonPressed = false;
@@ -39,7 +39,7 @@ int debounceDelay = 150;
 //time to let choosen step blink without delay
 unsigned int time;
 unsigned int oldTime;
-byte DEFAULT_NOTE =  0;
+byte defaultNote =  0;
 
 bool stopped = true;
 bool gate[STEP_LENGTH];
@@ -75,10 +75,11 @@ void sendMidi(byte channel, byte command, byte arg1, byte arg2) {
 }
 
 void resetSequence(){
-  for(byte i = 0; i < STEP_LENGTH;i++){
+  for(byte i = 0; i < STEP_LENGTH;i++) {
     gate[i] = false;
     slide[i] = false;
-    notes[i] = DEFAULT_NOTE;
+    notes[i] = defaultNote;
+    digitalWrite(ledPins[i], LOW);
   }
 }
 void blinkPin(byte blink, byte unblink) {
@@ -94,7 +95,7 @@ void activeMenuBlink(){
     if(activeMenuLedState == true) {
         digitalWrite(ledPins[activeMenuStep],LOW);
         activeMenuLedState = false;
-    }else {
+    } else {
       digitalWrite(ledPins[activeMenuStep],HIGH);
       activeMenuLedState = true;
     }
@@ -103,79 +104,67 @@ void activeMenuBlink(){
 }
 
 void nextStep() {
-    oldMenuStep= activeMenuStep;
-    if(activeMenuStep == STEP_LENGTH - 1) {
-      activeMenuStep = 0;
-    }else{
-      activeMenuStep++;
-    }
-    if(debug){
-      sprintf(buffer,"active %d",activeMenuStep);
-      Serial.println(buffer);
-    }
-    if(gate[oldMenuStep]) {
-      digitalWrite(ledPins[oldMenuStep],HIGH);
-    }else{
-      digitalWrite(ledPins[oldMenuStep],LOW);
-    }
-    if(gate[activeMenuStep] && stopped) {
-      if(debug){
-        Serial.print(activeMenuStep);
-      }
-      //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeMenuStep], DEFAULT_VELOCITY);
-    }
+  oldMenuStep= activeMenuStep;
+  if(activeMenuStep == STEP_LENGTH - 1) {
+    activeMenuStep = 0;
+  } else {
+    activeMenuStep++;
   }
+  if(debug) {
+    sprintf(buffer,"active %d",activeMenuStep);
+    Serial.println(buffer);
+  }
+  if(gate[oldMenuStep]) {
+    digitalWrite(ledPins[oldMenuStep],HIGH);
+  } else {
+    digitalWrite(ledPins[oldMenuStep],LOW);
+  }
+}
 
 void prevStep() {
-    oldMenuStep= activeMenuStep;
-    if(activeMenuStep == 0) {
-      activeMenuStep = STEP_LENGTH - 1;
-    }else{
-      activeMenuStep--;
-    }
-    if(debug){
-      sprintf(buffer,"active %d",activeMenuStep);
-      Serial.println(buffer);
-    }
-    if(gate[oldMenuStep]) {
-      digitalWrite(ledPins[oldMenuStep],HIGH);
-    }else{
-      digitalWrite(ledPins[oldMenuStep],LOW);
-    }
-    if(gate[activeMenuStep] && stopped) {
-      if(debug){
-        Serial.print(activeMenuStep);
-      }
-      //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeMenuStep], DEFAULT_VELOCITY);
-    }
+  oldMenuStep= activeMenuStep;
+  if(activeMenuStep == 0) {
+    activeMenuStep = STEP_LENGTH - 1;
+  } else {
+    activeMenuStep--;
+  }
+  if(debug) {
+    sprintf(buffer,"active %d",activeMenuStep);
+    Serial.println(buffer);
+  }
+  if(gate[oldMenuStep]) {
+    digitalWrite(ledPins[oldMenuStep],HIGH);
+  } else {
+    digitalWrite(ledPins[oldMenuStep],LOW);
+  }
 }
 
 void step() {
-  if(activeStep ==7){
+  if(activeStep == STEP_LENGTH - 1) {
     activeStep=0;
   } else {
     activeStep++;
   }
-   if(activeStep == 0) {
-     oldStep = 7;
-   } else {
-     oldStep = activeStep -1;
+  if(activeStep == 0) {
+    oldStep = STEP_LENGTH - 1;
+  } else {
+    oldStep = activeStep -1;
+ }
+ if(gate[oldStep] && !slide[activeStep]) {
+   sendMidi(MIDI_CHANNEL,NOTE_ON,notes[oldStep],0);
+ }
+ if(debug) {
+   sprintf(buffer,"current %d",activeStep);
+   Serial.println(buffer);
+ }
+ blinkPin(activeStep,oldStep);
+ if(gate[activeStep] == true) {
+   if(debug){
+     sprintf(buffer,"sendNote %d",activeStep);
+     Serial.println(buffer);
    }
-   if(gate[oldStep] && !slide[activeStep]) {
-     sendMidi(MIDI_CHANNEL,NOTE_ON,notes[oldStep],0);
-   }
-  if(debug){
-    sprintf(buffer,"current %d",activeStep);
-    Serial.println(buffer);
-  }
-  blinkPin(activeStep,oldStep);
-  if(gate[activeStep] == true) {
-    if(debug){
-      sprintf(buffer,"sendNote %d",activeStep);
-      Serial.println(buffer);
-    }
-    sendMidi(MIDI_CHANNEL,NOTE_ON,notes[activeStep],DEFAULT_VELOCITY);
-  }
+   sendMidi(MIDI_CHANNEL,NOTE_ON,notes[activeStep],DEFAULT_VELOCITY);
+ }
 }
 
 void checkButtons(){
@@ -185,11 +174,11 @@ void checkButtons(){
   noteUpDownButtonState = digitalRead(NOTE_UP_DOWN_PIN);
   funcButtonState = digitalRead(FUNC_PIN);
 
-//if all buttons are pressed reset the seuqence
-if(nextPrevButtonState && setSlideButtonState && noteUpDownButtonState && funcButtonPressed){
-  resetSequence();
-  lastDebounceTime =millis();
-}
+  //if all buttons are pressed reset the seuqence
+  if(nextPrevButtonState && setSlideButtonState && noteUpDownButtonState && funcButtonPressed) {
+    resetSequence();
+    lastDebounceTime =millis();
+  }
   //check noteUpDown
   if(noteUpDownButtonState == HIGH && noteUpDownButtonPressed == false) {
     lastDebounceTime = millis();
@@ -198,17 +187,17 @@ if(nextPrevButtonState && setSlideButtonState && noteUpDownButtonState && funcBu
       if(debug) {
         Serial.println("NoteDown");
       }
-      if(stopped && DEFAULT_NOTE != 0){
-        DEFAULT_NOTE--;
+      if(stopped && defaultNote != 0) {
+        defaultNote--;
       }
       notes[activeMenuStep] = notes[activeMenuStep] - 1;
-    }else {
+    } else {
       //NoteUp
       if(debug) {
         Serial.println("NoteUp");
       }
-      if(stopped){
-        DEFAULT_NOTE++;
+      if(stopped) {
+        defaultNote++;
       }
       notes[activeMenuStep] = notes[activeMenuStep] + 1;
     }
@@ -217,43 +206,41 @@ if(nextPrevButtonState && setSlideButtonState && noteUpDownButtonState && funcBu
   if(noteUpDownButtonState == LOW) {
     noteUpDownButtonPressed = false;
   }
-
+  //check setSlideButton
   if(setSlideButtonState == HIGH && setSlideButtonPressed == false) {
     lastDebounceTime = millis();
     if(funcButtonState == true) {
-      //slide
+      //set slide for activeM
       slide[activeMenuStep] = !slide[activeMenuStep];
-      //have to work with note off, and a slide array, if slide is set, note off shouldnt be sent for next step
-    } else {
+    }else{
       //set
       if(stopped) {
         if(debug) {
           Serial.println("NOTE ON");
         }
-        sendMidi(MIDI_CHANNEL, NOTE_ON, DEFAULT_NOTE, DEFAULT_VELOCITY);
+        sendMidi(MIDI_CHANNEL, NOTE_ON, defaultNote, DEFAULT_VELOCITY);
       }
       gate[activeMenuStep] = !gate[activeMenuStep];
-      notes[activeMenuStep] = DEFAULT_NOTE;
+      digitalWrite(ledPins[activeMenuStep],gate[activeMenuStep]);
+      notes[activeMenuStep] = defaultNote;
       if(debug) {
         Serial.println(activeMenuStep);
-        Serial.println(gate[activeStep]);
+        Serial.println(gate[activeMenuStep]);
       }
     }
-
     setSlideButtonPressed = true;
   }
-   if(stopped && setSlideButtonState== LOW && setSlideButtonPressed == true) {
-     lastDebounceTime = millis();
-     if(debug) {
-       Serial.println("NOTE OFFN");
-     }
-      //sendMidi(MIDI_CHANNEL, NOTE_OFF, notes[activeMenuStep], DEFAULT_VELOCITY);
-      sendMidi(MIDI_CHANNEL, NOTE_ON, DEFAULT_NOTE, 0);
-        setSlideButtonPressed = false;
+  if(stopped && setSlideButtonState== LOW && setSlideButtonPressed == true) {
+    lastDebounceTime = millis();
+    if(debug) {
+      Serial.println("NOTE OFFN");
+    }
+    sendMidi(MIDI_CHANNEL, NOTE_ON, defaultNote, 0);
+    setSlideButtonPressed = false;
   }
-  //if(setSlideButtonState ==LOW) {
-
-  //}
+  if(setSlideButtonState ==LOW) {
+    setSlideButtonPressed = false;
+  }
   if(nextPrevButtonState == HIGH && nextPrevButtonPressed==false ) {
     lastDebounceTime = millis();
     if(funcButtonState == true) {
@@ -262,7 +249,7 @@ if(nextPrevButtonState && setSlideButtonState && noteUpDownButtonState && funcBu
         Serial.println("PRESS PREV");
       }
       prevStep();
-    } else {
+    }else{
       //next Step
       if(debug) {
         if(debug){
@@ -286,7 +273,7 @@ void setup() {
   if(debug) {
     //set baud rate for serial monitor
     Serial.begin(9600);
-  }else{
+  } else {
     // set MIDI baud
     Serial.begin(31250);
   }
@@ -295,7 +282,7 @@ void setup() {
   for(int i=0;i<STEP_LENGTH;i++) {
     gate[i] = false;
     pinMode(ledPins[i],OUTPUT);
-    notes[i] = DEFAULT_NOTE;
+    notes[i] = defaultNote;
     slide[i] = false;
   }
 
@@ -312,29 +299,26 @@ void loop() {
     checkButtons();
   }
   activeMenuBlink();
-  if (Serial.available()  > 0) {
+  if(Serial.available()  > 0) {
     byte byte_read = Serial.read();
 
-    if (byte_read == MIDI_START) {
+    if(byte_read == MIDI_START) {
       activeStep = 0;
       stopped = false;
     }
-
-    if (byte_read == MIDI_STOP) {
+    if(byte_read == MIDI_STOP) {
       stopped = true;
       blinkPin(0, activeStep);
       sendMidi(MIDI_CHANNEL,NOTE_ON,notes[0],0);
       activeStep=0;
       count = 0;
     }
-
-    if (byte_read == MIDI_CONT) {
+    if(byte_read == MIDI_CONT) {
       stopped = false;
     }
-
-    if (byte_read == MIDI_CLOCK && stopped == false) {
+    if(byte_read == MIDI_CLOCK && stopped == false) {
       count++;
-      if (count == (24 / speedDivider)) {
+      if(count == (24 / speedDivider)) {
         step();
         count = 0;
       }

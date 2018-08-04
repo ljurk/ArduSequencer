@@ -301,27 +301,33 @@ void loop() {
   activeMenuBlink();
   if(Serial.available()  > 0) {
     byte byte_read = Serial.read();
-
-    if(byte_read == MIDI_START) {
-      activeStep = 0;
-      stopped = false;
-    }
-    if(byte_read == MIDI_STOP) {
-      stopped = true;
-      blinkPin(0, activeStep);
-      sendMidi(MIDI_CHANNEL,NOTE_ON,notes[0],0);
-      activeStep=0;
-      count = 0;
-    }
-    if(byte_read == MIDI_CONT) {
-      stopped = false;
-    }
-    if(byte_read == MIDI_CLOCK && stopped == false) {
-      count++;
-      if(count == (24 / speedDivider)) {
-        step();
+    switch(byte_read) {
+      case MIDI_START:
+        activeStep = 0;
+        stopped = false;
+        break;
+      case MIDI_STOP:
+        stopped = true;
+        blinkPin(0, activeStep);
+        sendMidi(MIDI_CHANNEL,NOTE_ON,notes[0],0);
+        activeStep=0;
         count = 0;
-      }
+        break;
+      case MIDI_CONT:
+        stopped = false;
+        break;
+      case MIDI_CLOCK:
+        if(!stopped) {
+          count++;
+          if(count == (24 / speedDivider)) {
+            step();
+            count = 0;
+          }
+        }
+        break;
+      default:
+        break;
+
     }
   }
 }

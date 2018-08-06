@@ -141,17 +141,28 @@ void prevStep() {
 
 void step() {
   if(activeStep == STEP_LENGTH - 1) {
-    activeStep=0;
+    activeStep = 0;
   } else {
     activeStep++;
   }
   if(activeStep == 0) {
     oldStep = STEP_LENGTH - 1;
   } else {
-    oldStep = activeStep -1;
+    oldStep = activeStep - 1;
  }
  if(gate[oldStep] && !slide[activeStep]) {
-   sendMidi(MIDI_CHANNEL,NOTE_ON,notes[oldStep],0);
+   sendMidi(MIDI_CHANNEL,NOTE_ON,notes[oldStep], 0);
+ }
+ if(slide[oldStep]) {
+   byte lastNoteStep = oldStep - 1;
+   while(gate[lastNoteStep] == false && slide[lastNoteStep + 1] == true) {
+     if(lastNoteStep == 0) {
+       lastNoteStep = STEP_LENGTH - 1;
+     } else {
+       lastNoteStep -= 1;
+     }
+   }
+   sendMidi(MIDI_CHANNEL,NOTE_ON,notes[lastNoteStep], 0);
  }
  if(debug) {
    sprintf(buffer,"current %d",activeStep);
@@ -267,7 +278,6 @@ void checkButtons(){
 }
 
 void setup() {
-
   time =millis();
   oldTime=time;
   if(debug) {
@@ -309,7 +319,12 @@ void loop() {
       case MIDI_STOP:
         stopped = true;
         blinkPin(0, activeStep);
-        sendMidi(MIDI_CHANNEL,NOTE_ON,notes[0],0);
+        if(gate[oldStep]) {
+          sendMidi(MIDI_CHANNEL,NOTE_ON,notes[oldStep],0);
+        }
+        if(gate[activeStep]) {
+          sendMidi(MIDI_CHANNEL,NOTE_ON,notes[activeStep],0);
+        }
         activeStep=0;
         count = 0;
         break;

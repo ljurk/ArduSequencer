@@ -1,3 +1,6 @@
+/*<><><><><><><><><<<code by Lukas Jurk>>><><><><><><><><>*/
+/*<><><><><><><><><<<version 0.23>>><><><><><><><><>*/
+/*<><><><><><><><><<<303>>><><><><><><><><>*/
 #include <Arduino.h>
 
 //for MIDI IN
@@ -54,6 +57,7 @@ byte oldMenuStep= 0;
 byte activeMenuStep=0;
 bool activeMenuLedState = false;
 char buffer[20];
+
 
 void sendMidi(byte channel, byte command, byte arg1, byte arg2) {
   if(command < 128) {

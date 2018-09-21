@@ -2,6 +2,10 @@
 /*<><><><><><><><><<<version 0.23>>><><><><><><><><>*/
 /*<><><><><><><><><<<303>>><><><><><><><><>*/
 #include <Arduino.h>
+#include <Encoder.h>
+#include <Wire.h>
+#include <Adafruit_SSD1306.h>
+#include <Adafruit_GFX.h>
 
 //for MIDI IN
 #define MIDI_START 250

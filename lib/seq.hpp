@@ -1,16 +1,20 @@
 #include <Arduino.h>
 #include "..\lib\midi.hpp"
 
+#if STEP_LENGTH
+  #include <Arduino.h>
+#else
+  #define STEP_LENGTH 8
+#endif
 #define NOTE_OFF 8
 #define NOTE_ON 9
 #define DEFAULT_VELOCITY 64
-#define STEP_LENGTH 8
 
 class sequencer {
 private:
 
 public:
-  sequencer();
+  sequencer(bool dbg = false);
   int getDefaultNote();
   int getActiveStep();
   bool getStopped();
@@ -22,8 +26,8 @@ public:
   bool getSlideActive();
   byte getActiveMenuStep();
 
-  void raiseDefaultNote();
-  void lowerDefaultNote();
+  void defaultNoteUp();
+  void defaultNoteDown();
   void resetSequence();
   void nextStep();
   void prevStep();

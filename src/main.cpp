@@ -10,11 +10,12 @@
 #include "..\lib\seq.hpp"
 #include "..\lib\midi.hpp"
 
+
+#define STEP_LENGTH 8
 //for midi in
 
-
 //true disables midi, and writes debug messages on 9600 baud
-bool debug = false;
+bool debugON = false;
 
 //buttons
 bool nextPrevButtonPressed = false;
@@ -40,7 +41,6 @@ bool activeMenuLedState = false;
 char buffer[20];
 sequencer seq = sequencer();
 
-
 void blinkPin(byte blink, byte unblink) {
   digitalWrite(ledPins[blink],HIGH);
   if(seq.getGate(unblink) == false) {
@@ -62,10 +62,6 @@ void activeMenuBlink(){
   }
 }
 
-
-
-
-
 void checkButtons(){
   // read the state of the buttons
   nextPrevButtonState = digitalRead(NEXT_PREV_PIN);
@@ -83,7 +79,7 @@ void checkButtons(){
     lastDebounceTime = millis();
     if(funcButtonState == true) {
       //NoteDown
-      if(debug) {
+      if(debugON) {
         Serial.println("NoteDown");
       }
       if(seq.getStopped()) {
@@ -93,7 +89,7 @@ void checkButtons(){
       //notes[activeMenuStep] = notes[activeMenuStep] - 1;
     } else {
       //NoteUp
-      if(debug) {
+      if(debugON) {
         Serial.println("NoteUp");
       }
       seq.noteUp();
@@ -114,7 +110,7 @@ void checkButtons(){
     }else{
       //set
       if(seq.getStopped()) {
-        if(debug) {
+        if(debugON) {
           Serial.println("NOTE ON");
         }
         sendMidi(MIDI_CHANNEL, NOTE_ON, seq.getDefaultNote(), DEFAULT_VELOCITY);
@@ -133,7 +129,7 @@ void checkButtons(){
   }
   if(seq.getStopped() && setSlideButtonState == LOW && setSlideButtonPressed == true) {
     lastDebounceTime = millis();
-    if(debug) {
+    if(debugON) {
       Serial.println("NOTE OFFN");
     }
     sendMidi(MIDI_CHANNEL, NOTE_ON, seq.getDefaultNote(), 0);
@@ -146,14 +142,14 @@ void checkButtons(){
     lastDebounceTime = millis();
     if(funcButtonState == true) {
       //previous Step
-      if(debug) {
+      if(debugON) {
         Serial.println("PRESS PREV");
       }
       seq.prevStep();
     }else{
       //next Step
-      if(debug) {
-        if(debug) {
+      if(debugON) {
+        if(debugON) {
           sprintf(buffer,"next %ld",lastDebounceTime);
           Serial.println(buffer);
         }
@@ -170,16 +166,16 @@ void checkButtons(){
 void setup() {
   time =millis();
   oldTime=time;
-  if(debug) {
+  if(debugON) {
     //set baud rate for serial monitor
     Serial.begin(9600);
   } else {
     // set MIDI baud
     Serial.begin(31250);
   }
-for(int i = 0; i  <STEP_LENGTH; i++) {
-  pinMode(ledPins[i],OUTPUT);
-}
+  for(int i = 0; i  <STEP_LENGTH; i++) {
+    pinMode(ledPins[i],OUTPUT);
+  }
   // initialize button pins
   pinMode(NEXT_PREV_PIN, INPUT);
   pinMode(SET_SLIDE_PIN,INPUT);
@@ -212,7 +208,6 @@ void loop() {
         break;
       default:
         break;
-
     }
   }
 }

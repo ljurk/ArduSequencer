@@ -12,8 +12,12 @@ byte oldStep= 0;
 byte oldMenuStep= 0;
 byte activeMenuStep=0;
 bool slideActive = false;
+bool debug = false;
 
-sequencer::sequencer() {
+sequencer::sequencer(bool dbg) {
+  if(dbg == true) {
+    debug = true;
+  }
   //initialize arrays
   for(int i = 0; i  <STEP_LENGTH; i++) {
     gate[i] = false;
@@ -30,26 +34,14 @@ bool sequencer::getStopped(){
   return stopped;
 }
 
-void sequencer::lowerDefaultNote(){
-  if(defaultNote != 0) {
-    defaultNote -= 1;
-  }
-}
-void sequencer::raiseDefaultNote(){
-    defaultNote += 1;
+int sequencer::getDefaultNote() {
+  return defaultNote;
 }
 
-void sequencer::noteDown(){
-  if(notes[activeStep] != 0) {
-    notes[activeStep] += 1;
-  }
-}
-void sequencer::noteUp(){
-  notes[activeStep] += 1;
-}
 byte sequencer::getActiveMenuStep(){
   return activeMenuStep;
 }
+
 int sequencer::getActiveStep(){
   return activeStep;
 }
@@ -58,17 +50,33 @@ bool sequencer::getGate(int pos){
   return gate[pos];
 }
 
+void sequencer::defaultNoteUp(){
+  if(defaultNote != 0) {
+    defaultNote -= 1;
+  }
+}
+
+void sequencer::defaultNoteDown(){
+    defaultNote += 1;
+}
+
+void sequencer::noteDown(){
+  if(notes[activeStep] != 0) {
+    notes[activeStep] -= 1;
+  }
+}
+
+void sequencer::noteUp(){
+  notes[activeStep] += 1;
+}
+
 void sequencer::setGate() {
   gate[activeStep] = ! gate[activeStep];
 }
+
 void sequencer::setNote(){
   notes[activeStep] = defaultNote;
 }
-
-int sequencer::getDefaultNote() {
-  return defaultNote;
-}
-
 
 void sequencer::resetSequence(){
   for(byte i = 0; i < STEP_LENGTH;i++) {
@@ -78,7 +86,7 @@ void sequencer::resetSequence(){
   //  digitalWrite(ledPins[i], LOW);
   }
 }
-
+//navigation
 void sequencer::nextStep() {
   oldMenuStep= activeMenuStep;
   if(activeMenuStep == STEP_LENGTH - 1) {
@@ -115,7 +123,7 @@ void sequencer::prevStep() {
     digitalWrite(ledPins[oldMenuStep],LOW);
   }*/
 }
-
+// will be called from clock
 void sequencer::step() {
   if(activeStep == STEP_LENGTH - 1) {
     activeStep = 0;
@@ -135,26 +143,25 @@ void sequencer::step() {
    if(gate[oldStep]) {
      //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[oldStep], 0);
    }
- }
-  /* if(sequencer::slide[oldStep]) {
-     sequencer::lastNoteStep = sequencer::oldStep - 1;
-     while(sequencer::gate[sequencer::lastNoteStep] == false && sequencer::slide[sequencer::lastNoteStep + 1] == true) {
-       if(sequencer::lastNoteStep == 0) {
-         sequencer::lastNoteStep = STEP_LENGTH - 1;
-       } else {
-         sequencer::lastNoteStep -= 1;
+
+    /* if(sequencer::slide[oldStep]) {
+       sequencer::lastNoteStep = sequencer::oldStep - 1;
+       while(sequencer::gate[sequencer::lastNoteStep] == false && sequencer::slide[sequencer::lastNoteStep + 1] == true) {
+         if(sequencer::lastNoteStep == 0) {
+           sequencer::lastNoteStep = STEP_LENGTH - 1;
+         } else {
+           sequencer::lastNoteStep -= 1;
+         }
        }
-     }
-     //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[lastNoteStep], 0);
-*/
+       //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[lastNoteStep], 0);
+     */
  }
+ if(gate[activeStep] == true) {
+   sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeStep], DEFAULT_VELOCITY);
+ }
+}
 
- //blinkPin(activeStep,oldStep);
- //if(sequencer::gate[activeStep] == true) {
-   //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeStep], DEFAULT_VELOCITY);
-// }
-//}
-
+//sequencer functions that should connected to midi sginals
 void sequencer::start() {
   activeStep = 0;
   stopped = false;

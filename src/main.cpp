@@ -35,10 +35,35 @@ unsigned int oldTime;
 
 byte ledPins[STEP_LENGTH] = {9,8,7,6,5,4,3,2};
 
-bool activeMenuLedState = false;
+bool activeMenuLedState = true;
 char buffer[20];
-sequencer seq = sequencer();
+sequencer seq = sequencer(debugON);
+void startingAnimation(){
+  if(debugON) {
+    Serial.print("starting...");
+  }
+  for(int i = 0; i  <STEP_LENGTH; i++) {
+    digitalWrite(ledPins[i],HIGH);
+    delay(500);
+  }
+  for(int h = 0; h  <5; h++) {
+    for(int i = 0; i  <STEP_LENGTH; i++) {
+      digitalWrite(ledPins[i],HIGH);
+    }
+    delay(200);
+    for(int i = 0; i  <STEP_LENGTH; i++) {
+      digitalWrite(ledPins[i],LOW);
+    }
+    delay(200);
+  }
+}
 void pressNext() {
+  if(debugON) {
+    sprintf(buffer,"Active %x",seq.getActiveMenuStep());
+    Serial.println(buffer);
+    sprintf(buffer,"Old %x",seq.getOldMenuStep());
+    Serial.println(buffer);
+  }
   if(seq.getGate(seq.getOldMenuStep())) {
     digitalWrite(ledPins[seq.getOldMenuStep()],HIGH);
   } else {
@@ -46,6 +71,12 @@ void pressNext() {
   }
 }
 void pressPrev(){
+  if(debugON) {
+    sprintf(buffer,"Active %x",seq.getActiveMenuStep());
+    Serial.println(buffer);
+    sprintf(buffer,"Old %x",seq.getOldMenuStep());
+    Serial.println(buffer);
+  }
   if(seq.getGate(seq.getOldMenuStep()))  {
     digitalWrite(ledPins[seq.getOldMenuStep()],HIGH);
   } else {
@@ -54,10 +85,20 @@ void pressPrev(){
 }
 void showSequence() {
   for(int i = 0; i < STEP_LENGTH; i++) {
-    if(seq.getGate(i)) {
-      digitalWrite(ledPins[i],HIGH);
-    } else {
-      digitalWrite(ledPins[i],LOW);
+   if(i != seq.getActiveMenuStep()) {
+      if(seq.getGate(i)) {
+        if(i == seq.getActiveStep()) {
+            digitalWrite(ledPins[i], LOW);
+          } else {
+            digitalWrite(ledPins[i],HIGH);
+          }
+      } else {
+        if(i == seq.getActiveStep()) {
+            digitalWrite(ledPins[i], HIGH);
+          } else {
+            digitalWrite(ledPins[i],LOW);
+          }
+      }
     }
   }
 }
@@ -71,6 +112,13 @@ void blinkPin(byte blink, byte unblink) {
 void activeMenuBlink(){
   time = millis();
   if(time > oldTime + BLINK_TIME) {
+    if(debugON) {
+      seq.clock();
+    }
+    if(debugON) {
+      //  Serial.println(seq.getActiveMenuStep());
+    }
+
     if(activeMenuLedState == true) {
         digitalWrite(ledPins[seq.getActiveMenuStep()],LOW);
         activeMenuLedState = false;
@@ -135,7 +183,9 @@ void checkButtons(){
           Serial.println("NOTE ON");
         }
         sendMidi(MIDI_CHANNEL, NOTE_ON, seq.getDefaultNote(), DEFAULT_VELOCITY);
+        showSequence();
       }
+      showSequence();
       seq.setGate();
       digitalWrite(ledPins[seq.getActiveMenuStep()],seq.getGate(seq.getActiveMenuStep()));
       seq.setNote();
@@ -162,6 +212,7 @@ void checkButtons(){
         Serial.println("PRESS PREV");
       }
       seq.prevStep();
+      pressPrev();
     }else{
       //next Step
       if(debugON) {
@@ -192,13 +243,19 @@ void setup() {
   }
   for(int i = 0; i  <STEP_LENGTH; i++) {
     pinMode(ledPins[i],OUTPUT);
+
   }
+  startingAnimation();
+
   // initialize button pins
   pinMode(NEXT_PREV_PIN, INPUT);
   pinMode(SET_SLIDE_PIN,INPUT);
   pinMode(NOTE_UP_DOWN_PIN, INPUT);
   pinMode(FUNC_PIN, INPUT);
   lastDebounceTime = millis();
+  if(debugON){
+    seq.start();
+  }
 
 }
 
@@ -207,7 +264,7 @@ void loop() {
     checkButtons();
   }
   activeMenuBlink();
-  showSequence();
+
   if(Serial.available()  > 0) {
     byte byte_read = Serial.read();
     switch(byte_read) {
@@ -222,6 +279,7 @@ void loop() {
         seq.cont();
         break;
       case MIDI_CLOCK:
+          showSequence();
           seq.clock();
         break;
       default:

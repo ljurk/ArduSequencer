@@ -8,9 +8,14 @@ void sendMidi(byte channel, byte command, byte arg1, byte arg2) {
     command |= channel;
   }
   // send MIDI data
-
+/*debug
     Serial.println("MIDI");
     Serial.println(command);
     Serial.println(arg1);
     Serial.println(arg2);
+    */
+    Serial.write(command);
+Serial.write(arg1);
+Serial.write(arg2);
+
 }

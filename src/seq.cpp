@@ -1,18 +1,6 @@
 #include "../lib/seq.hpp"
 
-int count = 0; // counter for midi ticks, 24 ticks are one quarter note
-byte speedDivider = 1; //1=24ticks,2=12ticks,4=6ticks
-byte defaultNote =  0;
-bool stopped = true;
-bool gate[STEP_LENGTH];
-byte notes[STEP_LENGTH];
-bool slide[STEP_LENGTH];
-byte activeStep= 0;
-byte oldStep= 0;
-byte oldMenuStep= 0;
-byte activeMenuStep=0;
-bool slideActive = false;
-bool debug = false;
+
 
 sequencer::sequencer(bool dbg) {
   if(dbg == true) {
@@ -79,6 +67,9 @@ void sequencer::setGate() {
 void sequencer::setNote(){
   notes[activeStep] = defaultNote;
 }
+void sequencer::setSlide(){
+
+}
 
 void sequencer::resetSequence(){
   for(byte i = 0; i < STEP_LENGTH;i++) {
@@ -96,12 +87,11 @@ void sequencer::nextStep() {
   } else {
     activeMenuStep++;
   }
-  /*
-  if(debug) {
+
+  /*if(debug) {
     sprintf(buffer,"active %d",activeMenuStep);
     Serial.println(buffer);
-  }
-*/
+  }*/
 }
 
 void sequencer::prevStep() {
@@ -124,29 +114,36 @@ void sequencer::step() {
   } else {
     oldStep = activeStep - 1;
  }
+
+  if(gate[oldStep]) {
+    sendMidi(MIDI_CHANNEL, NOTE_ON, notes[oldStep], 0);
+    if (debug) {
+      Serial.print(oldStep);
+      Serial.print("OFF");
+    }
+   }
+ /* SLIDE IS COMING LATER
  if(slideActive) {
    if(gate[oldStep] && !slide[activeStep]) {
      //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[oldStep], 0);
    }
  } else {
-   if(gate[oldStep]) {
-     sendMidi(MIDI_CHANNEL, NOTE_ON, notes[oldStep], 0);
-   }
-
-    /* SLIDE IS COMING LATER
-    if(sequencer::slide[oldStep]) {
-       sequencer::lastNoteStep = sequencer::oldStep - 1;
-       while(sequencer::gate[sequencer::lastNoteStep] == false && sequencer::slide[sequencer::lastNoteStep + 1] == true) {
-         if(sequencer::lastNoteStep == 0) {
-           sequencer::lastNoteStep = STEP_LENGTH - 1;
-         } else {
-           sequencer::lastNoteStep -= 1;
-         }
-       }
-       //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[lastNoteStep], 0);
-     */
- }
+ if(sequencer::slide[oldStep]) {
+    sequencer::lastNoteStep = sequencer::oldStep - 1;
+    while(sequencer::gate[sequencer::lastNoteStep] == false && sequencer::slide[sequencer::lastNoteStep + 1] == true) {
+      if(sequencer::lastNoteStep == 0) {
+        sequencer::lastNoteStep = STEP_LENGTH - 1;
+      } else {
+        sequencer::lastNoteStep -= 1;
+      }
+    }
+    //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[lastNoteStep], 0);
+  */
  if(gate[activeStep] == true) {
+   if (debug) {
+     Serial.print(activeStep);
+     Serial.print("ON");
+   }
    sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeStep], DEFAULT_VELOCITY);
  }
 }

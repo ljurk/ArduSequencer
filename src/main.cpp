@@ -10,7 +10,6 @@
 #include "..\lib\seq.hpp"
 #include "..\lib\midi.hpp"
 
-
 #define STEP_LENGTH 8
 //for midi in
 
@@ -36,11 +35,32 @@ unsigned int oldTime;
 
 byte ledPins[STEP_LENGTH] = {9,8,7,6,5,4,3,2};
 
-
 bool activeMenuLedState = false;
 char buffer[20];
 sequencer seq = sequencer();
-
+void pressNext() {
+  if(seq.getGate(seq.getOldMenuStep())) {
+    digitalWrite(ledPins[seq.getOldMenuStep()],HIGH);
+  } else {
+    digitalWrite(ledPins[seq.getOldMenuStep()],LOW);
+  }
+}
+void pressPrev(){
+  if(seq.getGate(seq.getOldMenuStep()))  {
+    digitalWrite(ledPins[seq.getOldMenuStep()],HIGH);
+  } else {
+    digitalWrite(ledPins[seq.getOldMenuStep()],LOW);
+  }
+}
+void showSequence() {
+  for(int i = 0; i < STEP_LENGTH; i++) {
+    if(seq.getGate(i)) {
+      digitalWrite(ledPins[i],HIGH);
+    } else {
+      digitalWrite(ledPins[i],LOW);
+    }
+  }
+}
 void blinkPin(byte blink, byte unblink) {
   digitalWrite(ledPins[blink],HIGH);
   if(seq.getGate(unblink) == false) {
@@ -83,17 +103,18 @@ void checkButtons(){
         Serial.println("NoteDown");
       }
       if(seq.getStopped()) {
-        seq.lowerDefaultNote();
+        seq.defaultNoteDown();
       }
       seq.noteDown();
-      //notes[activeMenuStep] = notes[activeMenuStep] - 1;
     } else {
       //NoteUp
       if(debugON) {
         Serial.println("NoteUp");
       }
+      if(seq.getStopped()) {
+        seq.defaultNoteUp();
+      }
       seq.noteUp();
-      //notes[activeMenuStep] = notes[activeMenuStep] + 1;
     }
     noteUpDownButtonPressed = true;
   }
@@ -116,14 +137,8 @@ void checkButtons(){
         sendMidi(MIDI_CHANNEL, NOTE_ON, seq.getDefaultNote(), DEFAULT_VELOCITY);
       }
       seq.setGate();
-      //gate[activeMenuStep] = !gate[activeMenuStep];
-      //digitalWrite(ledPins[seq.getActiveMenuStep()],gate[seq.getActiveMenuStep()]);
-      //notes[activeMenuStep] = seq.getDefaultNote();
+      digitalWrite(ledPins[seq.getActiveMenuStep()],seq.getGate(seq.getActiveMenuStep()));
       seq.setNote();
-      /*if(debug) {
-        Serial.println(activeMenuStep);
-        Serial.println(gate[activeMenuStep]);
-      }*/
     }
     setSlideButtonPressed = true;
   }
@@ -138,6 +153,7 @@ void checkButtons(){
   if(setSlideButtonState == LOW) {
     setSlideButtonPressed = false;
   }
+  //check nextPrev
   if(nextPrevButtonState == HIGH && nextPrevButtonPressed == false ) {
     lastDebounceTime = millis();
     if(funcButtonState == true) {
@@ -155,6 +171,7 @@ void checkButtons(){
         }
       }
       seq.nextStep();
+      pressNext();
     }
     nextPrevButtonPressed = true;
   }
@@ -190,6 +207,7 @@ void loop() {
     checkButtons();
   }
   activeMenuBlink();
+  showSequence();
   if(Serial.available()  > 0) {
     byte byte_read = Serial.read();
     switch(byte_read) {

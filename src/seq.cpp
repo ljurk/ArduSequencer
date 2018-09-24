@@ -25,7 +25,9 @@ sequencer::sequencer(bool dbg) {
     slide[i] = false;
   }
 }
-
+byte sequencer::getOldMenuStep(){
+  return oldMenuStep;
+}
 bool sequencer::getSlideActive() {
   return slideActive;
 }
@@ -61,17 +63,17 @@ void sequencer::defaultNoteDown(){
 }
 
 void sequencer::noteDown(){
-  if(notes[activeStep] != 0) {
-    notes[activeStep] -= 1;
+  if(notes[activeMenuStep] != 0) {
+    notes[activeMenuStep] -= 1;
   }
 }
 
 void sequencer::noteUp(){
-  notes[activeStep] += 1;
+  notes[activeMenuStep] += 1;
 }
 
 void sequencer::setGate() {
-  gate[activeStep] = ! gate[activeStep];
+  gate[activeMenuStep] = ! gate[activeMenuStep];
 }
 
 void sequencer::setNote(){
@@ -99,11 +101,7 @@ void sequencer::nextStep() {
     sprintf(buffer,"active %d",activeMenuStep);
     Serial.println(buffer);
   }
-  if(gate[oldMenuStep]) {
-    digitalWrite(ledPins[oldMenuStep],HIGH);
-  } else {
-    digitalWrite(ledPins[oldMenuStep],LOW);
-  }*/
+*/
 }
 
 void sequencer::prevStep() {
@@ -113,15 +111,6 @@ void sequencer::prevStep() {
   } else {
     activeMenuStep--;
   }
-  /*if(debug) {
-    sprintf(buffer,"active %d",activeMenuStep);
-    Serial.println(buffer);
-  }
-  if(gate[oldMenuStep]) {
-    digitalWrite(ledPins[oldMenuStep],HIGH);
-  } else {
-    digitalWrite(ledPins[oldMenuStep],LOW);
-  }*/
 }
 // will be called from clock
 void sequencer::step() {
@@ -141,10 +130,11 @@ void sequencer::step() {
    }
  } else {
    if(gate[oldStep]) {
-     //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[oldStep], 0);
+     sendMidi(MIDI_CHANNEL, NOTE_ON, notes[oldStep], 0);
    }
 
-    /* if(sequencer::slide[oldStep]) {
+    /* SLIDE IS COMING LATER
+    if(sequencer::slide[oldStep]) {
        sequencer::lastNoteStep = sequencer::oldStep - 1;
        while(sequencer::gate[sequencer::lastNoteStep] == false && sequencer::slide[sequencer::lastNoteStep + 1] == true) {
          if(sequencer::lastNoteStep == 0) {

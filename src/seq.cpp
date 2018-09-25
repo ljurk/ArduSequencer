@@ -116,7 +116,7 @@ void sequencer::step() {
  }
 
   if(gate[oldStep]) {
-    sendMidi(MIDI_CHANNEL, NOTE_ON, notes[oldStep], 0);
+    sendNoteOff(notes[oldStep]);
     if (debug) {
       Serial.print(oldStep);
       Serial.print("OFF");
@@ -144,7 +144,7 @@ void sequencer::step() {
      Serial.print(activeStep);
      Serial.print("ON");
    }
-   sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeStep], DEFAULT_VELOCITY);
+   sendNoteOn(notes[activeStep],DEFAULT_VELOCITY);
  }
 }
 
@@ -157,10 +157,10 @@ void sequencer::start() {
 void sequencer::stop(){
   stopped = true;
   if(gate[oldStep]) {
-    sendMidi(MIDI_CHANNEL, NOTE_ON, notes[oldStep], 0);
+    sendNoteOff(notes[oldStep]);
   }
   if(gate[activeStep]) {
-    sendMidi(MIDI_CHANNEL, NOTE_ON, notes[activeStep], 0);
+    sendNoteOff(notes[activeStep]);
   }
   activeStep=0;
   count = 0;

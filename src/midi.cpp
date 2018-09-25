@@ -19,3 +19,11 @@ Serial.write(arg1);
 Serial.write(arg2);
 
 }
+
+void sendNoteOn(byte note, byte velocity) {
+  sendMidi(MIDI_CHANNEL, NOTE_ON, note, velocity);
+}
+
+void sendNoteOff(byte note) {
+  sendMidi(MIDI_CHANNEL, NOTE_ON, note, 0);
+}

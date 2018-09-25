@@ -11,8 +11,13 @@
 #include "..\lib\midi.hpp"
 
 #define STEP_LENGTH 8
-//for midi in
-
+#define MIDI_CHANNEL 10
+//buttons
+#define SET_SLIDE_PIN  11
+#define FUNC_PIN 12
+#define  NOTE_UP_DOWN_PIN 13
+#define NEXT_PREV_PIN 10
+#define BLINK_TIME 150
 //true disables midi, and writes debug messages on 9600 baud
 bool debugON = false;
 

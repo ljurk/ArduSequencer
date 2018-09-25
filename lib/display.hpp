@@ -2,6 +2,8 @@
 #include <Adafruit_GFX.h>
 
 void step(byte pos);
-void updateSteps();
 
-void showValues();
+void updateSequence();
+void updateValues();
+void updateCursor();
+void updateSequence();

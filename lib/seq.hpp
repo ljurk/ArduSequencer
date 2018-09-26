@@ -17,7 +17,7 @@ private:
   bool gate[STEP_LENGTH];
   byte notes[STEP_LENGTH];
   bool slide[STEP_LENGTH];
-  byte velocity[STEP_LENGTH};
+  byte velocity[STEP_LENGTH];
   byte activeStep= 0;
   byte oldStep= 0;
   byte oldMenuStep= 0;

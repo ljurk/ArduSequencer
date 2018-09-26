@@ -41,7 +41,10 @@ bool sequencer::getGate(int pos){
   return gate[pos];
 }
 
-void sequencer::getVelocity(int pos) {
+byte sequencer::getNote(int pos) {
+  return notes[pos];
+}
+byte sequencer::getVelocity(int pos) {
   return velocity[pos];
 }
 
@@ -75,7 +78,7 @@ void sequencer::setVelocityUp() {
 
 void sequencer::setVelocityDown() {
   if(velocity[activeMenuStep] == 255) {
-    velocity[activeMenuStep] = 127
+    velocity[activeMenuStep] = 127;
   }
 }
 void sequencer::setGate() {

@@ -7,7 +7,6 @@
 #include "..\lib\midi.hpp"
 // OLED display TWI address
 #define OLED_ADDR   0x3C
-
 Adafruit_SSD1306 display(-1);
 
 #if (SSD1306_LCDHEIGHT != 64)
@@ -15,20 +14,25 @@ Adafruit_SSD1306 display(-1);
 #endif
 
 #define STEP_LENGTH 8
-const int buttonPin = 4;
-Encoder myEnc(2, 3);
+bool debugON = false;
+
+const int buttonPin = 10;
+Encoder myEnc(2,3);
+unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
+int debounceDelay = 300;
 int buttonState = 0;
 bool buttonPressed = false;
 long oldPosition  = -999;
 long newPosition =  -999;
-String seqString ="00000000 00000000";
-String cursorString ="00000000 00000000";
+String seqString ="00000000";
+String cursorString ="00000000";
 byte mode = 0;
 
 
 sequencer seq = sequencer();
 
 void updateCursor() {
+  display.setTextSize(2);
   /*Serial.println(actualStep);
   display.clearDisplay();
   updateSequence();
@@ -44,19 +48,22 @@ void updateCursor() {
   Serial.println(adder);*/
   if(mode == 0 ) {
     for(int i = 0; i < STEP_LENGTH ;i++) {
-      if(i == STEP_LENGTH) {
-        cursorString[i] = ' ';
-      }
-      if(i == seq.getActiveMenuStep()) {
+      if(i == seq.getActiveStep()) {
+        cursorString[i] = '|';
+      }else if(i == seq.getActiveMenuStep()) {
           cursorString[i/*+ adder*/] ='^';
         } else {
           cursorString[i/* + adder*/] = ' ';
         }
-
+      }
+    } else {
+      for(int i = 0; i < STEP_LENGTH ;i++) {
+          cursorString[i] = ' ';
+        }
     }
-
     display.setCursor(0,15);
     display.print(cursorString);
+    display.setTextSize(1);
 }
 
 void updateValues(){
@@ -69,9 +76,9 @@ void updateValues(){
     display.setTextColor(WHITE);
   }
   String outNote = "NOTE ";
-  outNote += String(note);
+  outNote += String(seq.getNote(seq.getActiveMenuStep()));
   String outVelo= " VELO ";
-  outVelo += String(seq.getVelocity(seq.getActiveMenuStep());
+  outVelo += String(seq.getVelocity(seq.getActiveMenuStep()));
   display.setCursor(0,48);
   display.print(outNote);
   if(mode == 2) {
@@ -86,7 +93,11 @@ void updateValues(){
   //display.setTextSize(2);
 }
 
+void updateActiveStep(){
+
+}
 void updateSequence(){
+  display.setTextSize(2);
   /*byte adder = 0;
   if(actualStep >= (STEP_LENGTH / 2)) {
     adder = 1;
@@ -102,7 +113,7 @@ void updateSequence(){
     if(i == STEP_LENGTH / 2) {
       seqString[i] = ' ';
     }*/
-      if(gate[i] == true) {
+      if(seq.getGate(i) == true) {
         seqString[i/* + adder */] = 'X';
       } else {
         seqString[i/* + adder*/] = '-';
@@ -115,10 +126,14 @@ void updateSequence(){
   //display.clearDisplay();
   display.setCursor(0,0);
   display.print(seqString);
+  display.setTextSize(1);
   //display.display();
 }
 
 void updateDisplay(){
+  if(debugON) {
+    Serial.print("update Display");
+  }
   display.clearDisplay();
   updateValues();
   updateCursor();
@@ -141,27 +156,14 @@ void checkInputs(){
       } else{
         if(mode == 1) { //velo
           seq.noteUp();
-          //updateValues();
-          /*if(note == 127) {
-            note = 60;
-          } else {
-              note ++;
-          }*/
         }
         if(mode == 2) { //velo
           seq.setVelocityUp();
         }
         if (mode == 0){
-          //turn right
-          //actualStep ++;
           seq.nextStep();
-          //updateCursor();
-          /*if (actualStep == STEP_LENGTH + 1) {
-            actualStep = 0;
-          }*/
         }
       }
-
     } else if(newPosition < oldPosition - 1){
         //turn right
         if (buttonState == HIGH){
@@ -172,12 +174,6 @@ void checkInputs(){
         } else{
           if(mode == 1) { //velo
             seq.noteDown();
-            //updateValues();
-            /*if(note == 60) {
-              note = 127;
-            } else {
-                note --;
-            }*/
           }
           if(mode == 2) { //velo
             seq.setVelocityDown();
@@ -185,24 +181,10 @@ void checkInputs(){
           if (mode == 0){
             //turn right
             seq.prevStep();
-            //updateCursor();
-            /*actualStep--;
-            if (actualStep == 255) {
-              actualStep = STEP_LENGTH;
-            }*/
           }
         }
     }
     oldPosition = newPosition;
-
-    /*display.clearDisplay();
-    Serial.println(newPosition);
-    display.setTextSize(4);
-    display.setTextColor(WHITE);
-    display.setCursor(27,30);
-
-    String myString = String(newPosition);
-    display.print(myString);*/
     updateDisplay();
   }
   if (buttonState == HIGH && buttonPressed == false) {
@@ -215,6 +197,7 @@ void checkInputs(){
     buttonPressed = false;
   }
 }
+
 void setup() {
   // initialize and clear display
   display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
@@ -241,14 +224,18 @@ void setup() {
   display.setTextColor(BLACK);
   display.setCursor(0,48);
   display.print("303030303");
+  display.setTextColor(WHITE);
 //display.setTextSize(2);
 
   // update display with all of the above graphics
   display.display();
   pinMode(buttonPin,INPUT);
-  Serial.begin(9600);
-  for(int i = 0; i  <STEP_LENGTH; i++) {
-    gate[i] = false;
+  if(debugON) {
+    //set baud rate for serial monitor
+    Serial.begin(9600);
+  } else {
+    // set MIDI baud
+    Serial.begin(31250);
   }
   delay(5000);
 }
@@ -256,6 +243,7 @@ void setup() {
 void loop() {
  // put your main code here, to run repeatedly:
  checkInputs();
+ int count = 0;
  if(Serial.available()  > 0) {
    byte byte_read = Serial.read();
    switch(byte_read) {
@@ -264,18 +252,23 @@ void loop() {
        break;
      case MIDI_STOP:
        seq.stop();
-       blinkPin(0, seq.getActiveStep());
+       updateDisplay();
        break;
      case MIDI_CONT:
        seq.cont();
        break;
      case MIDI_CLOCK:
-         showSequence();
+       /*if(seq.getStopped() == false) {
+         count++;
+         if(count == (24)) {*/
+           updateDisplay();
+           /*count = 0;
+         }
+       }*/
          seq.clock();
        break;
      default:
        break;
    }
  }
-  display.display();
 }

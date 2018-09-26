@@ -11,6 +11,7 @@ sequencer::sequencer(bool dbg) {
     gate[i] = false;
     notes[i] = getDefaultNote();
     slide[i] = false;
+    velocity[i] = DEFAULT_VELOCITY;
   }
 }
 byte sequencer::getOldMenuStep(){
@@ -40,6 +41,10 @@ bool sequencer::getGate(int pos){
   return gate[pos];
 }
 
+void sequencer::getVelocity(int pos) {
+  return velocity[pos];
+}
+
 void sequencer::defaultNoteUp(){
   if(defaultNote != 0) {
     defaultNote -= 1;
@@ -60,6 +65,19 @@ void sequencer::noteUp(){
   notes[activeMenuStep] += 1;
 }
 
+void sequencer::setVelocityUp() {
+  if(velocity[activeMenuStep] == 128) {
+    velocity[activeMenuStep] = 0;
+  } else {
+    velocity[activeMenuStep]++;
+  }
+}
+
+void sequencer::setVelocityDown() {
+  if(velocity[activeMenuStep] == 255) {
+    velocity[activeMenuStep] = 127
+  }
+}
 void sequencer::setGate() {
   gate[activeMenuStep] = ! gate[activeMenuStep];
 }

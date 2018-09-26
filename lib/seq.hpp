@@ -17,6 +17,7 @@ private:
   bool gate[STEP_LENGTH];
   byte notes[STEP_LENGTH];
   bool slide[STEP_LENGTH];
+  byte velocity[STEP_LENGTH};
   byte activeStep= 0;
   byte oldStep= 0;
   byte oldMenuStep= 0;
@@ -31,6 +32,7 @@ public:
   bool getGate(int pos);
   byte getNote(int pos);
   bool getSlide(int pos);
+  byte getVelocity(int pos);
   byte getOldStep();
   byte getOldMenuStep();
   bool getSlideActive();
@@ -45,6 +47,8 @@ public:
 
   void noteDown();
   void noteUp();
+  void setVelocityUp();
+  void setVelocityDown();
   void setSlide();
   void setGate();
   void setNote();

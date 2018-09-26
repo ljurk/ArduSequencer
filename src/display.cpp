@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_GFX.h>
-#include "../lib/display.hpp"
+#include "..\lib\display.hpp"
 #include "..\lib\seq.hpp"
 #include "..\lib\midi.hpp"
 // OLED display TWI address

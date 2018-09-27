@@ -33,19 +33,6 @@ sequencer seq = sequencer();
 
 void updateCursor() {
   display.setTextSize(2);
-  /*Serial.println(actualStep);
-  display.clearDisplay();
-  updateSequence();
-  updateValues();*/
-  /*  byte adder = 0;
-
-  if(actualStep >= (STEP_LENGTH / 2)) {
-    adder = 1;
-  } else {
-    adder = 0;
-  }
-  Serial.println(actualStep);
-  Serial.println(adder);*/
   if(mode == 0 ) {
     for(int i = 0; i < STEP_LENGTH ;i++) {
       if(i == seq.getActiveStep()) {
@@ -98,36 +85,16 @@ void updateActiveStep(){
 }
 void updateSequence(){
   display.setTextSize(2);
-  /*byte adder = 0;
-  if(actualStep >= (STEP_LENGTH / 2)) {
-    adder = 1;
-  } else {
-    adder = 0;
-  }*/
   for(int i = 0; i  <STEP_LENGTH; i++) {
-    /*if(i >= (STEP_LENGTH / 2)) {
-      adder = 1;
-    } else {
-      adder = 0;
-    }
-    if(i == STEP_LENGTH / 2) {
-      seqString[i] = ' ';
-    }*/
       if(seq.getGate(i) == true) {
         seqString[i/* + adder */] = 'X';
       } else {
         seqString[i/* + adder*/] = '-';
       }
-
-
   }
-  //updateSequence();
-  //updateValues(false);
-  //display.clearDisplay();
   display.setCursor(0,0);
   display.print(seqString);
   display.setTextSize(1);
-  //display.display();
 }
 
 void updateDisplay(){
@@ -243,7 +210,6 @@ void setup() {
 void loop() {
  // put your main code here, to run repeatedly:
  checkInputs();
- int count = 0;
  if(Serial.available()  > 0) {
    byte byte_read = Serial.read();
    switch(byte_read) {
@@ -258,14 +224,8 @@ void loop() {
        seq.cont();
        break;
      case MIDI_CLOCK:
-       /*if(seq.getStopped() == false) {
-         count++;
-         if(count == (24)) {*/
-           updateDisplay();
-           /*count = 0;
-         }
-       }*/
-         seq.clock();
+        updateDisplay();
+        seq.clock();
        break;
      default:
        break;

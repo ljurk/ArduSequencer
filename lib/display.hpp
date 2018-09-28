@@ -1,6 +1,6 @@
-#include "Encoder.h"
+#include "..\lib\Encoder.h"
 //#include <Wire.h>
-#include <Adafruit_SSD1306.h>
+#include "..\lib\Adafruit_SSD1306.h"
 #include <Adafruit_GFX.h>
 #include "..\lib\seq.hpp"
 #include "..\lib\midi.hpp"
@@ -34,5 +34,4 @@ public:
   void run();
   void checkInputs();
   void updateActiveStep();
-
 };

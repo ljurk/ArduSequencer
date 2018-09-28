@@ -1,12 +1,21 @@
 //#include "..\lib\seq.hpp"
 //#include "..\lib\midi.hpp"
-//#include "..\lib\led.hpp"
-#include "..\lib\display.hpp"
 
-bool mainDebug = false;
+
+
+
+
 //sequencer seq = sequencer(mainDebug);
-//led ledSeq = led(mainDebug);
-displaySequencer mainSeq = displaySequencer(mainDebug);
+/*~~~~~~~~~  LED   ~~~~~~~~~*/
+#include "..\lib\led.hpp"
+led mainSeq = led(mainDebug);
+
+/*~~~~~~~  DISPLAY   ~~~~~~~*/
+//#include "..\lib\display.hpp"
+//displaySequencer mainSeq = displaySequencer(mainDebug);
+
+/*~~~~~~  DEBUGMODE   ~~~~~~*/
+bool mainDebug = false; //only accepts midi when set to true
 
 void setup() {
   if(mainDebug) {
@@ -16,13 +25,9 @@ void setup() {
     // set MIDI baud
     Serial.begin(31250);
   }
-
   mainSeq.startingAnimation();
-
-
 }
 
 void loop() {
   mainSeq.run();
-
 }

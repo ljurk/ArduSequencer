@@ -1,10 +1,4 @@
-
-
 #include "..\lib\display.hpp"
-
-// OLED display TWI address
-
-
 
 /*#if (SSD1306_LCDHEIGHT != 64)
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
@@ -71,7 +65,6 @@ void displaySequencer::updateValues(){
   display.setCursor(64,48);
   display.print(outVelo);
   display.setTextColor(WHITE);
-  //display.setTextSize(2);
 }
 
 void displaySequencer::updateActiveStep(){
@@ -111,36 +104,35 @@ void displaySequencer::checkInputs(){
       //turn right
       if (buttonState == HIGH){
         mode++;
-        if(mode == 3) {
+        if(mode == 3) {//mode
           mode = 0;
         }
       } else{
-        if(mode == 1) { //velo
+        if(mode == 1) { //note
           seq.noteUp();
         }
         if(mode == 2) { //velo
           seq.setVelocityUp();
         }
-        if (mode == 0){
+        if (mode == 0){//cursor
           seq.nextStep();
         }
       }
     } else if(newPosition < oldPosition - 1){
-        //turn right
+        //turn left
         if (buttonState == HIGH){
           mode--;
-          if(mode == 255) {
+          if(mode == 255) {//mode
             mode = 2;
           }
         } else{
-          if(mode == 1) { //velo
+          if(mode == 1) { //note
             seq.noteDown();
           }
           if(mode == 2) { //velo
             seq.setVelocityDown();
           }
-          if (mode == 0){
-            //turn right
+          if (mode == 0){//cursor
             seq.prevStep();
           }
         }
@@ -151,7 +143,6 @@ void displaySequencer::checkInputs(){
   if (buttonState == HIGH && buttonPressed == false) {
     seq.setGate();
     seq.setNote();
-    //updateSequence();
     updateDisplay();
     buttonPressed = true;
   } else if(buttonState == LOW) {
@@ -186,7 +177,6 @@ void displaySequencer::startingAnimation(){
   display.setCursor(0,48);
   display.print("303030303");
   display.setTextColor(WHITE);
-//display.setTextSize(2);
 
   // update display with all of the above graphics
   display.display();
@@ -194,7 +184,6 @@ void displaySequencer::startingAnimation(){
 }
 
 void displaySequencer::run() {
- // put your main code here, to run repeatedly:
  checkInputs();
  if(Serial.available()  > 0) {
    byte byte_read = Serial.read();

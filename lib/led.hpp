@@ -1,8 +1,5 @@
 #include <Arduino.h>
-//#include <Encoder.h>
 //#include <Wire.h>
-//#include <Adafruit_SSD1306.h>
-//#include <Adafruit_GFX.h>
 #include "..\lib\seq.hpp"
 #include "..\lib\midi.hpp"
 
@@ -32,7 +29,6 @@ private:
 
   bool activeMenuLedState = true;
   char buffer[20];
-  //sequencer seq = sequencer(debugLed);
   sequencer seq;
 public:
   led(bool debug);

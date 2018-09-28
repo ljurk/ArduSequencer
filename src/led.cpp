@@ -1,50 +1,42 @@
 /*<><><><><><><><><<<code by Lukas Jurk>>><><><><><><><><>*/
 /*<><><><><><><><><<<version 0.23>>><><><><><><><><>*/
 /*<><><><><><><><><<<303>>><><><><><><><><>*/
-#include <Arduino.h>
+/*#include <Arduino.h>
 #include <Encoder.h>
 #include <Wire.h>
 #include <Adafruit_SSD1306.h>
 #include <Adafruit_GFX.h>
 
-#include "..\lib\seq.hpp"
-#include "..\lib\midi.hpp"
+
+#include "..\lib\led.hpp"
 
 #define STEP_LENGTH 8
-#define MIDI_CHANNEL 10
+//#define MIDI_CHANNEL 10
 //buttons
 #define SET_SLIDE_PIN  11
 #define FUNC_PIN 12
 #define  NOTE_UP_DOWN_PIN 13
 #define NEXT_PREV_PIN 10
 #define BLINK_TIME 150
-//true disables midi, and writes debug messages on 9600 baud
-bool debugON = false;
 
-//buttons
-bool nextPrevButtonPressed = false;
-bool setSlideButtonPressed = false;
-bool noteUpDownButtonPressed = false;
-bool funcButtonPressed = false;
+led::led(bool debug){
+  //seq = inputSeq;
+  time =millis();
+  oldTime=time;
+  for(int i = 0; i  <STEP_LENGTH; i++) {
+    pinMode(ledPins[i],OUTPUT);
 
-bool nextPrevButtonState = false;
-bool setSlideButtonState = false;
-bool noteUpDownButtonState = false;
-bool funcButtonState = false;
+  }
+  // initialize button pins
+  pinMode(NEXT_PREV_PIN, INPUT);
+  pinMode(SET_SLIDE_PIN,INPUT);
+  pinMode(NOTE_UP_DOWN_PIN, INPUT);
+  pinMode(FUNC_PIN, INPUT);
+  lastDebounceTime = millis();
 
-unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
-int debounceDelay = 150;
-//time to let choosen step blink without delay
-unsigned int time;
-unsigned int oldTime;
-
-byte ledPins[STEP_LENGTH] = {9,8,7,6,5,4,3,2};
-
-bool activeMenuLedState = true;
-char buffer[20];
-sequencer seq = sequencer(debugON);
-void startingAnimation(){
-  if(debugON) {
+}
+void led::startingAnimation(){
+  if(debugLed) {
     Serial.print("starting...");
   }
   for(int i = 0; i  <STEP_LENGTH; i++) {
@@ -62,8 +54,8 @@ void startingAnimation(){
     delay(200);
   }
 }
-void pressNext() {
-  if(debugON) {
+void led::pressNext() {
+  if(debugLed) {
     sprintf(buffer,"Active %x",seq.getActiveMenuStep());
     Serial.println(buffer);
     sprintf(buffer,"Old %x",seq.getOldMenuStep());
@@ -75,8 +67,8 @@ void pressNext() {
     digitalWrite(ledPins[seq.getOldMenuStep()],LOW);
   }
 }
-void pressPrev(){
-  if(debugON) {
+void led::pressPrev(){
+  if(debugLed) {
     sprintf(buffer,"Active %x",seq.getActiveMenuStep());
     Serial.println(buffer);
     sprintf(buffer,"Old %x",seq.getOldMenuStep());
@@ -88,7 +80,7 @@ void pressPrev(){
     digitalWrite(ledPins[seq.getOldMenuStep()],LOW);
   }
 }
-void showSequence() {
+void led::showSequence() {
   for(int i = 0; i < STEP_LENGTH; i++) {
    if(i != seq.getActiveMenuStep()) {
       if(seq.getGate(i)) {
@@ -107,20 +99,20 @@ void showSequence() {
     }
   }
 }
-void blinkPin(byte blink, byte unblink) {
+void led::blinkPin(byte blink, byte unblink) {
   digitalWrite(ledPins[blink],HIGH);
   if(seq.getGate(unblink) == false) {
     digitalWrite(ledPins[unblink],LOW);
   }
 }
 
-void activeMenuBlink(){
+void led::activeMenuBlink(){
   time = millis();
   if(time > oldTime + BLINK_TIME) {
-    if(debugON) {
+    if(debugLed) {
       seq.clock();
     }
-    if(debugON) {
+    if(debugLed) {
       //  Serial.println(seq.getActiveMenuStep());
     }
 
@@ -135,160 +127,106 @@ void activeMenuBlink(){
   }
 }
 
-void checkButtons(){
-  // read the state of the buttons
-  nextPrevButtonState = digitalRead(NEXT_PREV_PIN);
-  setSlideButtonState = digitalRead(SET_SLIDE_PIN);
-  noteUpDownButtonState = digitalRead(NOTE_UP_DOWN_PIN);
-  funcButtonState = digitalRead(FUNC_PIN);
-
-  //if all buttons are pressed reset the seuqence
-  if(nextPrevButtonState && setSlideButtonState && noteUpDownButtonState && funcButtonPressed) {
-    seq.resetSequence();
-    lastDebounceTime =millis();
-  }
-  //check noteUpDown
-  if(noteUpDownButtonState == HIGH && noteUpDownButtonPressed == false) {
-    lastDebounceTime = millis();
-    if(funcButtonState == true) {
-      //NoteDown
-      if(debugON) {
-        Serial.println("NoteDown");
-      }
-      if(seq.getStopped()) {
-        seq.defaultNoteDown();
-      }
-      seq.noteDown();
-    } else {
-      //NoteUp
-      if(debugON) {
-        Serial.println("NoteUp");
-      }
-      if(seq.getStopped()) {
-        seq.defaultNoteUp();
-      }
-      seq.noteUp();
-    }
-    noteUpDownButtonPressed = true;
-  }
-  if(noteUpDownButtonState == LOW) {
-    noteUpDownButtonPressed = false;
-  }
-  //check setSlideButton
-  if(setSlideButtonState == HIGH && setSlideButtonPressed == false) {
-    lastDebounceTime = millis();
-    if(funcButtonState == true && seq.getSlideActive() == true) {
-      //set slide for activeMenuStep
-      seq.setSlide();
-      //slide[activeMenuStep] = !slide[activeMenuStep];
-    }else{
-      //set
-      if(seq.getStopped()) {
-        if(debugON) {
-          Serial.println("NOTE ON");
-        }
-        sendMidi(MIDI_CHANNEL, NOTE_ON, seq.getDefaultNote(), DEFAULT_VELOCITY);
-        showSequence();
-      }
-      showSequence();
-      seq.setGate();
-      digitalWrite(ledPins[seq.getActiveMenuStep()],seq.getGate(seq.getActiveMenuStep()));
-      seq.setNote();
-    }
-    setSlideButtonPressed = true;
-  }
-  if(seq.getStopped() && setSlideButtonState == LOW && setSlideButtonPressed == true) {
-    lastDebounceTime = millis();
-    if(debugON) {
-      Serial.println("NOTE OFFN");
-    }
-    sendMidi(MIDI_CHANNEL, NOTE_ON, seq.getDefaultNote(), 0);
-    setSlideButtonPressed = false;
-  }
-  if(setSlideButtonState == LOW) {
-    setSlideButtonPressed = false;
-  }
-  //check nextPrev
-  if(nextPrevButtonState == HIGH && nextPrevButtonPressed == false ) {
-    lastDebounceTime = millis();
-    if(funcButtonState == true) {
-      //previous Step
-      if(debugON) {
-        Serial.println("PRESS PREV");
-      }
-      seq.prevStep();
-      pressPrev();
-    }else{
-      //next Step
-      if(debugON) {
-        if(debugON) {
-          sprintf(buffer,"next %ld",lastDebounceTime);
-          Serial.println(buffer);
-        }
-      }
-      seq.nextStep();
-      pressNext();
-    }
-    nextPrevButtonPressed = true;
-  }
-  if(nextPrevButtonState == LOW) {
-    nextPrevButtonPressed = false;
-  }
-}
-
-void setup() {
-  time =millis();
-  oldTime=time;
-  if(debugON) {
-    //set baud rate for serial monitor
-    Serial.begin(9600);
-  } else {
-    // set MIDI baud
-    Serial.begin(31250);
-  }
-  for(int i = 0; i  <STEP_LENGTH; i++) {
-    pinMode(ledPins[i],OUTPUT);
-
-  }
-  startingAnimation();
-
-  // initialize button pins
-  pinMode(NEXT_PREV_PIN, INPUT);
-  pinMode(SET_SLIDE_PIN,INPUT);
-  pinMode(NOTE_UP_DOWN_PIN, INPUT);
-  pinMode(FUNC_PIN, INPUT);
-  lastDebounceTime = millis();
-  if(debugON){
-    seq.start();
-  }
-
-}
-
-void loop() {
+void led::checkButtons(){
   if(millis() - debounceDelay > lastDebounceTime) {
-    checkButtons();
-  }
-  activeMenuBlink();
+    // read the state of the buttons
+    nextPrevButtonState = digitalRead(NEXT_PREV_PIN);
+    setSlideButtonState = digitalRead(SET_SLIDE_PIN);
+    noteUpDownButtonState = digitalRead(NOTE_UP_DOWN_PIN);
+    funcButtonState = digitalRead(FUNC_PIN);
 
-  if(Serial.available()  > 0) {
-    byte byte_read = Serial.read();
-    switch(byte_read) {
-      case MIDI_START:
-          seq.start();
-        break;
-      case MIDI_STOP:
-        seq.stop();
-        blinkPin(0, seq.getActiveStep());
-        break;
-      case MIDI_CONT:
-        seq.cont();
-        break;
-      case MIDI_CLOCK:
+    //if all buttons are pressed reset the seuqence
+    if(nextPrevButtonState && setSlideButtonState && noteUpDownButtonState && funcButtonPressed) {
+      seq.resetSequence();
+      lastDebounceTime =millis();
+    }
+    //check noteUpDown
+    if(noteUpDownButtonState == HIGH && noteUpDownButtonPressed == false) {
+      lastDebounceTime = millis();
+      if(funcButtonState == true) {
+        //NoteDown
+        if(debugLed) {
+          Serial.println("NoteDown");
+        }
+        if(seq.getStopped()) {
+          seq.defaultNoteDown();
+        }
+        seq.noteDown();
+      } else {
+        //NoteUp
+        if(debugLed) {
+          Serial.println("NoteUp");
+        }
+        if(seq.getStopped()) {
+          seq.defaultNoteUp();
+        }
+        seq.noteUp();
+      }
+      noteUpDownButtonPressed = true;
+    }
+    if(noteUpDownButtonState == LOW) {
+      noteUpDownButtonPressed = false;
+    }
+    //check setSlideButton
+    if(setSlideButtonState == HIGH && setSlideButtonPressed == false) {
+      lastDebounceTime = millis();
+      if(funcButtonState == true && seq.getSlideActive() == true) {
+        //set slide for activeMenuStep
+        seq.setSlide();
+        //slide[activeMenuStep] = !slide[activeMenuStep];
+      }else{
+        //set
+        if(seq.getStopped()) {
+          if(debugLed) {
+            Serial.println("NOTE ON");
+          }
+          sendMidi(MIDI_CHANNEL, NOTE_ON, seq.getDefaultNote(), DEFAULT_VELOCITY);
           showSequence();
-          seq.clock();
-        break;
-      default:
-        break;
+        }
+        showSequence();
+        seq.setGate();
+        digitalWrite(ledPins[seq.getActiveMenuStep()],seq.getGate(seq.getActiveMenuStep()));
+        seq.setNote();
+      }
+      setSlideButtonPressed = true;
+    }
+    if(seq.getStopped() && setSlideButtonState == LOW && setSlideButtonPressed == true) {
+      lastDebounceTime = millis();
+      if(debugLed) {
+        Serial.println("NOTE OFFN");
+      }
+      sendMidi(MIDI_CHANNEL, NOTE_ON, seq.getDefaultNote(), 0);
+      setSlideButtonPressed = false;
+    }
+    if(setSlideButtonState == LOW) {
+      setSlideButtonPressed = false;
+    }
+    //check nextPrev
+    if(nextPrevButtonState == HIGH && nextPrevButtonPressed == false ) {
+      lastDebounceTime = millis();
+      if(funcButtonState == true) {
+        //previous Step
+        if(debugLed) {
+          Serial.println("PRESS PREV");
+        }
+        seq.prevStep();
+        pressPrev();
+      }else{
+        //next Step
+        if(debugLed) {
+          if(debugLed) {
+            sprintf(buffer,"next %ld",lastDebounceTime);
+            Serial.println(buffer);
+          }
+        }
+        seq.nextStep();
+        pressNext();
+      }
+      nextPrevButtonPressed = true;
+    }
+    if(nextPrevButtonState == LOW) {
+      nextPrevButtonPressed = false;
     }
   }
 }
+*/

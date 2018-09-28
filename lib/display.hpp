@@ -1,6 +1,6 @@
-#include "..\lib\Encoder.h"
+#include "Encoder.h"
 //#include <Wire.h>
-#include <..\lib\Adafruit_SSD1306.h>
+#include <Adafruit_SSD1306.h>
 #include <Adafruit_GFX.h>
 #include "..\lib\seq.hpp"
 #include "..\lib\midi.hpp"
@@ -10,7 +10,7 @@
 class displaySequencer{
 private:
   bool debugDisplay = false;
-Adafruit_SSD1306 display = Adafruit_SSD1306(-1);
+  Adafruit_SSD1306 display = Adafruit_SSD1306(-1);
   const int buttonPin = 10;
   Encoder myEnc = Encoder(2,3);
   unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled

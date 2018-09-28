@@ -24,7 +24,6 @@ displaySequencer::displaySequencer(bool debug) {
      // set MIDI baud
      Serial.begin(31250);
    }
-   delay(5000);
  }
 void displaySequencer::updateCursor() {
   display.setTextSize(2);
@@ -191,6 +190,7 @@ void displaySequencer::startingAnimation(){
 
   // update display with all of the above graphics
   display.display();
+  delay(5000);
 }
 
 void displaySequencer::run() {

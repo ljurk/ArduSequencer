@@ -15,36 +15,7 @@
 displaySequencer::displaySequencer(bool debug) {
    debugDisplay = debug;
    seq = sequencer(debug);
-   // initialize and clear display
-   display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
-   display.clearDisplay();
-   display.display();
 
-   // display a pixel in each corner of the screen
-   display.drawPixel(0, 0, WHITE);
-   display.drawPixel(127, 0, WHITE);
-   display.drawPixel(0, 63, WHITE);
-   display.drawPixel(127, 63, WHITE);
-
-   // display a line of text
-   display.setTextSize(1);
-   display.setTextColor(WHITE);
-   display.setCursor(15,0);
-   display.print("SEQ v3.0.3");
-   display.setCursor(0,15);
-   display.print("<§~#%/}{\%#~§>");
-
-   display.drawRect(0,0, 128, 64, WHITE);
-   display.drawLine(0,30, 128, 30, WHITE);
-   display.fillRect(0,48, 128, 16, WHITE);
-   display.setTextColor(BLACK);
-   display.setCursor(0,48);
-   display.print("303030303");
-   display.setTextColor(WHITE);
- //display.setTextSize(2);
-
-   // update display with all of the above graphics
-   display.display();
    pinMode(buttonPin,INPUT);
    if(debugDisplay) {
      //set baud rate for serial monitor
@@ -190,7 +161,36 @@ void displaySequencer::checkInputs(){
 }
 
 void displaySequencer::startingAnimation(){
+  // initialize and clear display
+  display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
+  display.clearDisplay();
+  display.display();
 
+  // display a pixel in each corner of the screen
+  display.drawPixel(0, 0, WHITE);
+  display.drawPixel(127, 0, WHITE);
+  display.drawPixel(0, 63, WHITE);
+  display.drawPixel(127, 63, WHITE);
+
+  // display a line of text
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(15,0);
+  display.print("SEQ v3.0.3");
+  display.setCursor(0,15);
+  display.print("<§~#%/}{\%#~§>");
+
+  display.drawRect(0,0, 128, 64, WHITE);
+  display.drawLine(0,30, 128, 30, WHITE);
+  display.fillRect(0,48, 128, 16, WHITE);
+  display.setTextColor(BLACK);
+  display.setCursor(0,48);
+  display.print("303030303");
+  display.setTextColor(WHITE);
+//display.setTextSize(2);
+
+  // update display with all of the above graphics
+  display.display();
 }
 
 void displaySequencer::run() {

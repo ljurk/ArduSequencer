@@ -1,11 +1,7 @@
 /*<><><><><><><><><<<code by Lukas Jurk>>><><><><><><><><>*/
 /*<><><><><><><><><<<version 0.23>>><><><><><><><><>*/
 /*<><><><><><><><><<<303>>><><><><><><><><>*/
-/*#include <Arduino.h>
-#include <Encoder.h>
-#include <Wire.h>
-#include <Adafruit_SSD1306.h>
-#include <Adafruit_GFX.h>
+
 
 
 #include "..\lib\led.hpp"
@@ -20,7 +16,7 @@
 #define BLINK_TIME 150
 
 led::led(bool debug){
-  //seq = inputSeq;
+  seq = sequencer(debug);
   time =millis();
   oldTime=time;
   for(int i = 0; i  <STEP_LENGTH; i++) {
@@ -229,4 +225,30 @@ void led::checkButtons(){
     }
   }
 }
-*/
+
+void led::run(){
+  checkButtons();
+  activeMenuBlink();
+
+  if(Serial.available()  > 0) {
+    byte byte_read = Serial.read();
+    switch(byte_read) {
+      case MIDI_START:
+          seq.start();
+        break;
+      case MIDI_STOP:
+        seq.stop();
+        blinkPin(0, seq.getActiveStep());
+        break;
+      case MIDI_CONT:
+        seq.cont();
+        break;
+      case MIDI_CLOCK:
+          showSequence();
+          seq.clock();
+        break;
+      default:
+        break;
+    }
+  }
+}

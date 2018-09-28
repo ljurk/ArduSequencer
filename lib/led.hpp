@@ -1,4 +1,8 @@
-/*#include <Arduino.h>
+#include <Arduino.h>
+//#include <Encoder.h>
+//#include <Wire.h>
+//#include <Adafruit_SSD1306.h>
+//#include <Adafruit_GFX.h>
 #include "..\lib\seq.hpp"
 #include "..\lib\midi.hpp"
 
@@ -28,8 +32,8 @@ private:
 
   bool activeMenuLedState = true;
   char buffer[20];
-  sequencer seq = sequencer(debugLed);
-  //sequencer seq;
+  //sequencer seq = sequencer(debugLed);
+  sequencer seq;
 public:
   led(bool debug);
   void startingAnimation();
@@ -39,5 +43,5 @@ public:
   void blinkPin(byte blink, byte unblink);
   void checkButtons();
   void activeMenuBlink();
+  void run();
 };
-*/

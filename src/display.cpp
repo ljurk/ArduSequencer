@@ -1,17 +1,18 @@
-#include "..\lib\display.hpp"
-#include "..\lib\seq.hpp"
-#include "..\lib\midi.hpp"
-// OLED display TWI address
-#define OLED_ADDR   0x3C
-Adafruit_SSD1306 display(-1);
 
-#if (SSD1306_LCDHEIGHT != 64)
+
+#include "..\lib\display.hpp"
+
+// OLED display TWI address
+
+
+
+/*#if (SSD1306_LCDHEIGHT != 64)
 #error("Height incorrect, please fix Adafruit_SSD1306.h!");
-#endif
+#endif*/
 
 #define STEP_LENGTH 8
 
- void displaySequencer::displaySequencer(bool debug) {
+displaySequencer::displaySequencer(bool debug) {
    debugDisplay = debug;
    seq = sequencer(debug);
    // initialize and clear display

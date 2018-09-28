@@ -7,7 +7,6 @@ sequencer seq = sequencer(mainDebug);
 //led ledSeq = led(mainDebug);
 
 void setup() {
-
   if(mainDebug) {
     //set baud rate for serial monitor
     Serial.begin(9600);

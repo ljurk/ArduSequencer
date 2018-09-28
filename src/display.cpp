@@ -29,7 +29,7 @@ String cursorString ="00000000";
 byte mode = 0;
 
 
-sequencer seq = sequencer();
+//sequencer seq = sequencer();
 
 void updateCursor() {
   display.setTextSize(2);
@@ -164,7 +164,7 @@ void checkInputs(){
     buttonPressed = false;
   }
 }
-
+/*
 void setup() {
   // initialize and clear display
   display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
@@ -232,3 +232,4 @@ void loop() {
    }
  }
 }
+*/

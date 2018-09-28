@@ -4,7 +4,7 @@
 
 sequencer::sequencer(bool dbg) {
   if(dbg == true) {
-    debug = true;
+    seqDebug = true;
   }
   //initialize arrays
   for(int i = 0; i  <STEP_LENGTH; i++) {
@@ -109,7 +109,7 @@ void sequencer::nextStep() {
     activeMenuStep++;
   }
 
-  /*if(debug) {
+  /*if(seqDebug) {
     sprintf(buffer,"active %d",activeMenuStep);
     Serial.println(buffer);
   }*/
@@ -138,7 +138,7 @@ void sequencer::step() {
 
   if(gate[oldStep]) {
     sendNoteOff(notes[oldStep]);
-    if (debug) {
+    if (seqDebug) {
       Serial.print(oldStep);
       Serial.print("OFF");
     }
@@ -161,7 +161,7 @@ void sequencer::step() {
     //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[lastNoteStep], 0);
   */
  if(gate[activeStep] == true) {
-   if (debug) {
+   if (seqDebug) {
      Serial.print(activeStep);
      Serial.print("ON");
    }

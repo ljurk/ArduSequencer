@@ -23,7 +23,7 @@ private:
   byte oldMenuStep= 0;
   byte activeMenuStep=0;
   bool slideActive = false;
-  bool debug = false;
+  bool seqDebug = false;
 public:
   sequencer(bool dbg = false);
   int getDefaultNote();

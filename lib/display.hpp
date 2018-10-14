@@ -1,16 +1,15 @@
 #include "..\lib\Encoder.h"
 //#include <Wire.h>
-#include "..\lib\Adafruit_SSD1306.h"
-#include <Adafruit_GFX.h>
+#include <Wire.h>
+#include "LiquidCrystal_I2C.h"
 #include "..\lib\seq.hpp"
 #include "..\lib\midi.hpp"
 
-#define OLED_ADDR   0x3C
 
 class displaySequencer{
 private:
   bool debugDisplay = false;
-  Adafruit_SSD1306 display = Adafruit_SSD1306(-1);
+  LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27,20,4);
   const int buttonPin = 10;
   Encoder myEnc = Encoder(2,3);
   unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
@@ -19,8 +18,8 @@ private:
   bool buttonPressed = false;
   long oldPosition  = -999;
   long newPosition =  -999;
-  String seqString ="00000000";
-  String cursorString ="00000000";
+  String seqString ="0000000000000000";
+  String cursorString ="0000000000000000";
   byte mode = 0;
   sequencer seq;
 public:

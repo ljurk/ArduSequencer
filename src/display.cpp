@@ -1,15 +1,16 @@
 #include "..\lib\display.hpp"
 
-/*#if (SSD1306_LCDHEIGHT != 64)
-#error("Height incorrect, please fix Adafruit_SSD1306.h!");
-#endif*/
 
-#define STEP_LENGTH 8
+#define STEP_LENGTH 16
 
 displaySequencer::displaySequencer(bool debug) {
    debugDisplay = debug;
    seq = sequencer(debug);
 
+   //display
+   lcd.init();
+   lcd.backlight();
+   lcd.blink();
    pinMode(buttonPin,INPUT);
    if(debugDisplay) {
      //set baud rate for serial monitor
@@ -19,14 +20,16 @@ displaySequencer::displaySequencer(bool debug) {
      Serial.begin(31250);
    }
  }
+
+
 void displaySequencer::updateCursor() {
-  display.setTextSize(2);
+  //display.setTextSize(2);
   if(mode == 0 ) {
     for(int i = 0; i < STEP_LENGTH ;i++) {
       if(i == seq.getActiveStep()) {
-        cursorString[i] = '|';
+        cursorString[i] = '^';
       }else if(i == seq.getActiveMenuStep()) {
-          cursorString[i] ='^';
+          cursorString[i] =' ';
         } else {
           cursorString[i] = ' ';
         }
@@ -36,42 +39,42 @@ void displaySequencer::updateCursor() {
           cursorString[i] = ' ';
         }
     }
-    display.setCursor(0,15);
-    display.print(cursorString);
-    display.setTextSize(1);
+    lcd.setCursor(0,1);
+    lcd.print(cursorString);
+    //display.setTextSize(1);
 }
 
 void displaySequencer::updateValues(){
-  display.setTextSize(1);
-  display.setCursor(0,40);
+  //display.setTextSize(1);
+  lcd.setCursor(0,3);
   if(mode == 1) {
-    display.setTextColor(BLACK);
-    display.fillRect(0,48, 64, 16, WHITE);
+    //display.setTextColor(BLACK);
+    //display.fillRect(0,48, 64, 16, WHITE);
   } else {
-    display.setTextColor(WHITE);
+    //display.setTextColor(WHITE);
   }
   String outNote = "NOTE ";
   outNote += String(seq.getNote(seq.getActiveMenuStep()));
   String outVelo= " VELO ";
   outVelo += String(seq.getVelocity(seq.getActiveMenuStep()));
-  display.setCursor(0,48);
-  display.print(outNote);
+  //display.setCursor(0,48);
+  lcd.print(outNote);
   if(mode == 2) {
-    display.setTextColor(BLACK);
-    display.fillRect(64,48, 64, 16, WHITE);
+    //display.setTextColor(BLACK);
+    //display.fillRect(64,48, 64, 16, WHITE);
   } else {
-    display.setTextColor(WHITE);
+    //display.setTextColor(WHITE);
   }
-  display.setCursor(64,48);
-  display.print(outVelo);
-  display.setTextColor(WHITE);
+  lcd.setCursor(10,3);
+  lcd.print(outVelo);
+  //display.setTextColor(WHITE);
 }
 
 void displaySequencer::updateActiveStep(){
 
 }
 void displaySequencer::updateSequence(){
-  display.setTextSize(2);
+  //display.setTextSize(2);
   for(int i = 0; i  <STEP_LENGTH; i++) {
       if(seq.getGate(i) == true) {
         seqString[i] = 'X';
@@ -79,26 +82,32 @@ void displaySequencer::updateSequence(){
         seqString[i] = '-';
       }
   }
-  display.setCursor(0,0);
-  display.print(seqString);
-  display.setTextSize(1);
+  lcd.setCursor(0,0);
+  lcd.print(seqString);
+  //display.setTextSize(1);
 }
 
 void displaySequencer::updateDisplay(){
   if(debugDisplay) {
     Serial.print("update Display");
   }
-  display.clearDisplay();
+
   updateValues();
   updateCursor();
   updateSequence();
-  display.display();
+  if(mode == 0) {
+    lcd.setCursor(seq.getActiveMenuStep(),0);
+  } else if(mode == 1) {
+    lcd.setCursor(0,3);
+  } else if (mode == 2) {
+    lcd.setCursor(11,3);
+  }
+  //display.display();
 }
 
 void displaySequencer::checkInputs(){
   newPosition = myEnc.read();
   buttonState = digitalRead(buttonPin);
-
   if (newPosition != oldPosition) {
     if(newPosition > oldPosition + 1) {
       //turn right
@@ -106,6 +115,13 @@ void displaySequencer::checkInputs(){
         mode++;
         if(mode == 3) {//mode
           mode = 0;
+        }
+        if(mode == 0) {
+          lcd.setCursor(seq.getActiveMenuStep(),0);
+        } else if(mode == 1) {
+          lcd.setCursor(0,3);
+        } else if (mode == 2) {
+          lcd.setCursor(11,3);
         }
       } else{
         if(mode == 1) { //note
@@ -152,35 +168,20 @@ void displaySequencer::checkInputs(){
 
 void displaySequencer::startingAnimation(){
   // initialize and clear display
-  display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
-  display.clearDisplay();
-  display.display();
-
-  // display a pixel in each corner of the screen
-  display.drawPixel(0, 0, WHITE);
-  display.drawPixel(127, 0, WHITE);
-  display.drawPixel(0, 63, WHITE);
-  display.drawPixel(127, 63, WHITE);
-
+  if(debugDisplay) {
+    Serial.print("startingAnimation");
+  }
   // display a line of text
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(15,0);
-  display.print("SEQ v3.0.3");
-  display.setCursor(0,15);
-  display.print("<§~#%/}{\%#~§>");
-
-  display.drawRect(0,0, 128, 64, WHITE);
-  display.drawLine(0,30, 128, 30, WHITE);
-  display.fillRect(0,48, 128, 16, WHITE);
-  display.setTextColor(BLACK);
-  display.setCursor(0,48);
-  display.print("303030303");
-  display.setTextColor(WHITE);
+  lcd.setCursor(0,0);
+  lcd.print("SEQ v3.0.3 #23.23");
+  lcd.setCursor(0,1);
+  lcd.print("MIDI-channel ");
+  lcd.print(MIDI_CHANNEL);
 
   // update display with all of the above graphics
-  display.display();
+  //display.display();
   delay(5000);
+  lcd.clear();
 }
 
 void displaySequencer::run() {

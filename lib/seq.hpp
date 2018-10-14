@@ -3,7 +3,7 @@
 
 #ifdef STEP_LENGTH
 #else
-  #define STEP_LENGTH 8
+  #define STEP_LENGTH 16
 #endif
 
 #define DEFAULT_VELOCITY 64

@@ -1,23 +1,27 @@
 //#include "..\lib\seq.hpp"
 //#include "..\lib\midi.hpp"
+//#include "LiquidCrystal_I2C.h"
+#include <Arduino.h>
 
+/*~~~~~~  DEBUGMODE   ~~~~~~*/
+bool mainDebug = true; //only accepts midi when set to true
 
-
-
+//LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27,20,4);
 
 //sequencer seq = sequencer(mainDebug);
 /*~~~~~~~~~  LED   ~~~~~~~~~*/
-#include "..\lib\led.hpp"
-led mainSeq = led(mainDebug);
+//#include "..\lib\led.hpp"
+//led mainSeq = led(mainDebug);
 
 /*~~~~~~~  DISPLAY   ~~~~~~~*/
-//#include "..\lib\display.hpp"
-//displaySequencer mainSeq = displaySequencer(mainDebug);
+#include "..\lib\display.hpp"
+//displaySequencer mainSeq;
 
-/*~~~~~~  DEBUGMODE   ~~~~~~*/
-bool mainDebug = false; //only accepts midi when set to true
+displaySequencer* mainSeq;
 
 void setup() {
+  mainSeq = new displaySequencer(mainDebug);
+
   if(mainDebug) {
     //set baud rate for serial monitor
     Serial.begin(9600);
@@ -25,9 +29,10 @@ void setup() {
     // set MIDI baud
     Serial.begin(31250);
   }
-  mainSeq.startingAnimation();
+
+  mainSeq->startingAnimation();
 }
 
 void loop() {
-  mainSeq.run();
+  mainSeq->run();
 }

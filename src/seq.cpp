@@ -79,6 +79,8 @@ void sequencer::setVelocityUp() {
 void sequencer::setVelocityDown() {
   if(velocity[activeMenuStep] == 255) {
     velocity[activeMenuStep] = 127;
+  } else{
+    velocity[activeMenuStep]--;
   }
 }
 void sequencer::setGate() {

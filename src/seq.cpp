@@ -1,17 +1,17 @@
 #include "../lib/seq.hpp"
 
-
-
 sequencer::sequencer(bool dbg) {
   if(dbg == true) {
     seqDebug = true;
   }
   //initialize arrays
-  for(int i = 0; i  <STEP_LENGTH; i++) {
-    gate[i] = false;
-    notes[i] = getDefaultNote();
-    slide[i] = false;
-    velocity[i] = DEFAULT_VELOCITY;
+  for(int y = 0; y < NUMBER_OF_CHANNELS; y++) {
+    for(int i = 0; i  < STEP_LENGTH; i++) {
+      chan[y].gate[i] = false;
+      chan[y].notes[i] = getDefaultNote();
+      chan[y].slide[i] = false;
+      chan[y].velocity[i] = DEFAULT_VELOCITY;
+    }
   }
 }
 byte sequencer::getOldMenuStep(){
@@ -37,15 +37,15 @@ int sequencer::getActiveStep(){
   return activeStep;
 }
 
-bool sequencer::getGate(int pos){
-  return gate[pos];
+bool sequencer::getGate(byte channel, int pos){
+  return chan[channel].gate[pos];
 }
 
-byte sequencer::getNote(int pos) {
-  return notes[pos];
+byte sequencer::getNote(byte channel,int pos) {
+  return chan[channel].notes[pos];
 }
-byte sequencer::getVelocity(int pos) {
-  return velocity[pos];
+byte sequencer::getVelocity(byte channel,int pos) {
+  return chan[channel].velocity[pos];
 }
 
 void sequencer::defaultNoteUp(){
@@ -58,47 +58,47 @@ void sequencer::defaultNoteDown(){
     defaultNote += 1;
 }
 
-void sequencer::noteDown(){
-  if(notes[activeMenuStep] != 0) {
-    notes[activeMenuStep] -= 1;
+void sequencer::noteDown(byte channel){
+  if(chan[channel].notes[activeMenuStep] != 0) {
+    chan[channel].notes[activeMenuStep] -= 1;
   }
 }
 
-void sequencer::noteUp(){
-  notes[activeMenuStep] += 1;
+void sequencer::noteUp(byte channel){
+  chan[channel].notes[activeMenuStep] += 1;
 }
 
-void sequencer::setVelocityUp() {
-  if(velocity[activeMenuStep] == 128) {
-    velocity[activeMenuStep] = 0;
+void sequencer::setVelocityUp(byte channel) {
+  if(chan[channel].velocity[activeMenuStep] == 128) {
+    chan[channel].velocity[activeMenuStep] = 0;
   } else {
-    velocity[activeMenuStep]++;
+    chan[channel].velocity[activeMenuStep]++;
   }
 }
 
-void sequencer::setVelocityDown() {
-  if(velocity[activeMenuStep] == 255) {
-    velocity[activeMenuStep] = 127;
+void sequencer::setVelocityDown(byte channel) {
+  if(chan[channel].velocity[activeMenuStep] == 255) {
+    chan[channel].velocity[activeMenuStep] = 127;
   } else{
-    velocity[activeMenuStep]--;
+    chan[channel].velocity[activeMenuStep]--;
   }
 }
-void sequencer::setGate() {
-  gate[activeMenuStep] = ! gate[activeMenuStep];
+void sequencer::setGate(byte channel) {
+  chan[channel].gate[activeMenuStep] = ! chan[channel].gate[activeMenuStep];
 }
 
-void sequencer::setNote(){
-  notes[activeStep] = defaultNote;
+void sequencer::setNote(byte channel){
+  chan[channel].notes[activeStep] = defaultNote;
 }
-void sequencer::setSlide(){
+void sequencer::setSlide(byte channel){
 
 }
 
-void sequencer::resetSequence(){
+void sequencer::resetSequence(byte channel){
   for(byte i = 0; i < STEP_LENGTH;i++) {
-    gate[i] = false;
-    slide[i] = false;
-    notes[i] =   getDefaultNote();
+    chan[channel].gate[i] = false;
+    chan[channel].slide[i] = false;
+    chan[channel].notes[i] =   getDefaultNote();
   //  digitalWrite(ledPins[i], LOW);
   }
 }
@@ -126,7 +126,7 @@ void sequencer::prevStep() {
   }
 }
 // will be called from clock
-void sequencer::step() {
+void sequencer::step(byte channel) {
   if(activeStep == STEP_LENGTH - 1) {
     activeStep = 0;
   } else {
@@ -138,8 +138,8 @@ void sequencer::step() {
     oldStep = activeStep - 1;
  }
 
-  if(gate[oldStep]) {
-    sendNoteOff(notes[oldStep]);
+  if(chan[channel].gate[oldStep]) {
+    sendNoteOff(chan[channel].notes[oldStep]);
     if (seqDebug) {
       Serial.print(oldStep);
       Serial.print("OFF");
@@ -162,12 +162,12 @@ void sequencer::step() {
     }
     //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[lastNoteStep], 0);
   */
- if(gate[activeStep] == true) {
+ if(chan[channel].gate[activeStep] == true) {
    if (seqDebug) {
      Serial.print(activeStep);
      Serial.print("ON");
    }
-   sendNoteOn(notes[activeStep],DEFAULT_VELOCITY);
+   sendNoteOn(chan[channel].notes[activeStep],DEFAULT_VELOCITY);
  }
 }
 
@@ -179,12 +179,12 @@ void sequencer::start() {
 
 void sequencer::stop(){
   stopped = true;
-  if(gate[oldStep]) {
+  /*if(gate[oldStep]) {
     sendNoteOff(notes[oldStep]);
   }
   if(gate[activeStep]) {
     sendNoteOff(notes[activeStep]);
-  }
+  }*/
   activeStep=0;
   count = 0;
 }
@@ -197,7 +197,9 @@ void sequencer::clock() {
   if(!stopped) {
     count++;
     if(count == (24 / speedDivider)) {
-      step();
+      for(int i= 0; i< NUMBER_OF_CHANNELS; i++) {
+        step(i);
+      }
       count = 0;
     }
   }

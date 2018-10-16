@@ -6,6 +6,11 @@
   #define STEP_LENGTH 16
 #endif
 
+#ifdef NUMBER_OF_CHANNELS
+#else
+  #define NUMBER_OF_CHANNELS 4
+#endif
+
 #define DEFAULT_VELOCITY 64
 
 class sequencer {
@@ -20,10 +25,12 @@ private:
   	bool slide[STEP_LENGTH];
   	byte velocity[STEP_LENGTH];
   };
-  byte activeStep= 0;
-  byte oldStep= 0;
-  byte oldMenuStep= 0;
-  byte activeMenuStep=0;
+  seqChannel chan[NUMBER_OF_CHANNELS];
+  byte activeStep = 0;
+  byte oldStep = 0;
+  byte oldMenuStep = 0;
+  byte activeMenuStep = 0;
+  byte activeChannel = 0;
   bool slideActive = false;
   bool seqDebug = false;
 public:
@@ -31,10 +38,10 @@ public:
   int getDefaultNote();
   int getActiveStep();
   bool getStopped();
-  bool getGate(int pos);
-  byte getNote(int pos);
-  bool getSlide(int pos);
-  byte getVelocity(int pos);
+  bool getGate(byte channel,int pos);
+  byte getNote(byte channel,int pos);
+  bool getSlide(byte channel,int pos);
+  byte getVelocity(byte channel,int pos);
   byte getOldStep();
   byte getOldMenuStep();
   bool getSlideActive();
@@ -42,18 +49,18 @@ public:
 
   void defaultNoteUp();
   void defaultNoteDown();
-  void resetSequence();
+  void resetSequence(byte channel);
   void nextStep();
   void prevStep();
-  void step();
+  void step(byte channel);
 
-  void noteDown();
-  void noteUp();
-  void setVelocityUp();
-  void setVelocityDown();
-  void setSlide();
-  void setGate();
-  void setNote();
+  void noteDown(byte channel);
+  void noteUp(byte channel);
+  void setVelocityUp(byte channel);
+  void setVelocityDown(byte channel);
+  void setSlide(byte channel);
+  void setGate(byte channel);
+  void setNote(byte channel);
 
   void start();
   void stop();

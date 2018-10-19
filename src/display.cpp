@@ -19,11 +19,10 @@ displaySequencer::displaySequencer(bool debug) {
      // set MIDI baud
      Serial.begin(31250);
    }
- }
-
+}
 
 void displaySequencer::updateCursor() {
-  //display.setTextSize(2);
+  //not in use
   if(mode == 0 ) {
     for(int i = 0; i < STEP_LENGTH ;i++) {
       if(i == seq.getActiveStep()) {
@@ -54,9 +53,9 @@ void displaySequencer::updateValues(){
     //display.setTextColor(WHITE);
   }
   String outNote = "NOTE ";
-  outNote += String(seq.getNote(seq.getActiveMenuStep()));
+  outNote += String(seq.getNote(seq.getActiveChannel()));
   String outVelo= " VELO ";
-  outVelo += String(seq.getVelocity(seq.getActiveMenuStep()));
+  outVelo += String(seq.getVelocity(seq.getActiveChannel(),seq.getActiveMenuStep()));
   //display.setCursor(0,48);
   lcd.print(outNote);
   if(mode == 2) {
@@ -74,17 +73,18 @@ void displaySequencer::updateActiveStep(){
 
 }
 void displaySequencer::updateSequence(){
-  //display.setTextSize(2);
-  for(int i = 0; i  <STEP_LENGTH; i++) {
-      if(seq.getGate(i) == true) {
-        seqString[i] = 'X';
-      } else {
-        seqString[i] = '-';
-      }
+  //displays sequence for each channel
+  for(int y = 0; y < NUMBER_OF_CHANNELS; y++) {
+    for(int i = 0; i  <STEP_LENGTH; i++) {
+        if(seq.getGate(y, i) == true) {
+          seqString[i] = 'X';
+        } else {
+          seqString[i] = '-';
+        }
+    }
+    lcd.setCursor(0,y);
+    lcd.print(seqString);
   }
-  lcd.setCursor(0,0);
-  lcd.print(seqString);
-  //display.setTextSize(1);
 }
 
 void displaySequencer::updateDisplay(){
@@ -93,16 +93,17 @@ void displaySequencer::updateDisplay(){
   }
 
   updateValues();
-  updateCursor();
+  //updateCursor();
   updateSequence();
-  if(mode == 0) {
-    lcd.setCursor(seq.getActiveMenuStep(),0);
-  } else if(mode == 1) {
+  //after everything ist displayed change the cursor position
+  //to active element
+  if(mode == 0) {//sequence
+    lcd.setCursor(seq.getActiveMenuStep(),seq.getActiveChannel());
+  } else if(mode == 1) {//note
     lcd.setCursor(0,3);
-  } else if (mode == 2) {
+  } else if (mode == 2) { //velocity
     lcd.setCursor(11,3);
   }
-  //display.display();
 }
 
 void displaySequencer::checkInputs(){
@@ -125,13 +126,13 @@ void displaySequencer::checkInputs(){
         }
       } else{
         if(mode == 1) { //note
-          seq.noteUp();
+          seq.setNoteUp();
         }
         if(mode == 2) { //velo
           seq.setVelocityUp();
         }
         if (mode == 0){//cursor
-          seq.nextStep();
+          seq.setCursor(NEXT);
         }
       }
     } else if(newPosition < oldPosition - 1){
@@ -143,13 +144,13 @@ void displaySequencer::checkInputs(){
           }
         } else{
           if(mode == 1) { //note
-            seq.noteDown();
+            seq.setNoteDown();
           }
           if(mode == 2) { //velo
             seq.setVelocityDown();
           }
           if (mode == 0){//cursor
-            seq.prevStep();
+            seq.setCursor(PREV);
           }
         }
     }

@@ -11,6 +11,9 @@ private:
   bool debugDisplay = false;
   LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27,20,4);
   const int buttonPin = 10;
+  const byte channel0Pin = 4;
+  const byte channel1Pin = 5;
+  const byte channel2Pin = 6;
   Encoder myEnc = Encoder(2,3);
   unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
   int debounceDelay = 300;

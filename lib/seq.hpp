@@ -12,6 +12,16 @@
 #endif
 
 #define DEFAULT_VELOCITY 64
+#define NEXT 1
+#define PREV 0
+
+struct seqChannel {
+  bool gate[STEP_LENGTH];
+  //byte notes[STEP_LENGTH];
+  byte note;
+  bool slide[STEP_LENGTH];
+  byte velocity[STEP_LENGTH];
+};
 
 class sequencer {
 private:
@@ -19,12 +29,7 @@ private:
   byte speedDivider = 1; //1=24ticks,2=12ticks,4=6ticks
   byte defaultNote =  0;
   bool stopped = true;
-  struct seqChannel {
-  	bool gate[STEP_LENGTH];
-  	byte notes[STEP_LENGTH];
-  	bool slide[STEP_LENGTH];
-  	byte velocity[STEP_LENGTH];
-  };
+
   seqChannel chan[NUMBER_OF_CHANNELS];
   byte activeStep = 0;
   byte oldStep = 0;
@@ -35,32 +40,38 @@ private:
   bool seqDebug = false;
 public:
   sequencer(bool dbg = false);
+
+  //get
   int getDefaultNote();
   int getActiveStep();
   bool getStopped();
-  bool getGate(byte channel,int pos);
-  byte getNote(byte channel,int pos);
-  bool getSlide(byte channel,int pos);
-  byte getVelocity(byte channel,int pos);
+  bool getGate(byte channel,byte pos);
+  byte getNote(byte channel/*,int pos*/);
+  bool getSlide(byte channel,byte pos);
+  byte getVelocity(byte channel,byte pos);
   byte getOldStep();
   byte getOldMenuStep();
   bool getSlideActive();
   byte getActiveMenuStep();
+  byte getActiveChannel();
 
   void defaultNoteUp();
   void defaultNoteDown();
-  void resetSequence(byte channel);
-  void nextStep();
-  void prevStep();
+  void resetSequence();
   void step(byte channel);
 
-  void noteDown(byte channel);
-  void noteUp(byte channel);
-  void setVelocityUp(byte channel);
-  void setVelocityDown(byte channel);
-  void setSlide(byte channel);
-  void setGate(byte channel);
-  void setNote(byte channel);
+  //set, always depends on activeChannel and activeMenuStep
+  void setNoteDown();
+  void setNoteUp();
+  void setVelocityUp();
+  void setVelocityDown();
+  void setSlide();
+  void setGate();
+  void setNote();
+  //navigation
+  void setActiveChannel(byte channel);
+  void setCursor(bool direction); //true = forwards, false = backwards
+
 
   void start();
   void stop();

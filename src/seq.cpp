@@ -8,11 +8,14 @@ sequencer::sequencer(bool dbg) {
   for(int y = 0; y < NUMBER_OF_CHANNELS; y++) {
     for(int i = 0; i  < STEP_LENGTH; i++) {
       chan[y].gate[i] = false;
-      chan[y].notes[i] = getDefaultNote();
+      //chan[y].notes[i] = getDefaultNote();
       chan[y].slide[i] = false;
       chan[y].velocity[i] = DEFAULT_VELOCITY;
     }
   }
+  chan[0].note = 0;
+  chan[1].note = 1;
+  chan[2].note = 2;
 }
 byte sequencer::getOldMenuStep(){
   return oldMenuStep;
@@ -33,18 +36,22 @@ byte sequencer::getActiveMenuStep(){
   return activeMenuStep;
 }
 
+byte sequencer::getActiveChannel(){
+  return activeChannel;
+}
+
 int sequencer::getActiveStep(){
   return activeStep;
 }
 
-bool sequencer::getGate(byte channel, int pos){
+bool sequencer::getGate(byte channel, byte pos){
   return chan[channel].gate[pos];
 }
 
-byte sequencer::getNote(byte channel,int pos) {
-  return chan[channel].notes[pos];
+byte sequencer::getNote(byte channel/*,int pos*/) {
+  return chan[channel].note/*s[pos]*/;
 }
-byte sequencer::getVelocity(byte channel,int pos) {
+byte sequencer::getVelocity(byte channel, byte pos) {
   return chan[channel].velocity[pos];
 }
 
@@ -58,73 +65,74 @@ void sequencer::defaultNoteDown(){
     defaultNote += 1;
 }
 
-void sequencer::noteDown(byte channel){
-  if(chan[channel].notes[activeMenuStep] != 0) {
-    chan[channel].notes[activeMenuStep] -= 1;
+void sequencer::setNoteDown(){
+  if(chan[activeChannel].note != 0) {
+    chan[activeChannel].note -= 1;
   }
 }
 
-void sequencer::noteUp(byte channel){
-  chan[channel].notes[activeMenuStep] += 1;
+void sequencer::setNoteUp(){
+  chan[activeChannel].note += 1;
 }
 
-void sequencer::setVelocityUp(byte channel) {
-  if(chan[channel].velocity[activeMenuStep] == 128) {
-    chan[channel].velocity[activeMenuStep] = 0;
+void sequencer::setVelocityUp() {
+  if(chan[activeChannel].velocity[activeMenuStep] == 128) {
+    chan[activeChannel].velocity[activeMenuStep] = 0;
   } else {
-    chan[channel].velocity[activeMenuStep]++;
+    chan[activeChannel].velocity[activeMenuStep]++;
   }
 }
 
-void sequencer::setVelocityDown(byte channel) {
-  if(chan[channel].velocity[activeMenuStep] == 255) {
-    chan[channel].velocity[activeMenuStep] = 127;
+void sequencer::setVelocityDown() {
+  if(chan[activeChannel].velocity[activeMenuStep] == 255) {
+    chan[activeChannel].velocity[activeMenuStep] = 127;
   } else{
-    chan[channel].velocity[activeMenuStep]--;
+    chan[activeChannel].velocity[activeMenuStep]--;
   }
 }
-void sequencer::setGate(byte channel) {
-  chan[channel].gate[activeMenuStep] = ! chan[channel].gate[activeMenuStep];
+void sequencer::setGate() {
+  chan[activeChannel].gate[activeMenuStep] = ! chan[activeChannel].gate[activeMenuStep];
 }
 
-void sequencer::setNote(byte channel){
-  chan[channel].notes[activeStep] = defaultNote;
+void sequencer::setNote(){
+  //chan[channel].notes[activeStep] = defaultNote;
 }
-void sequencer::setSlide(byte channel){
+void sequencer::setSlide(){
 
 }
 
-void sequencer::resetSequence(byte channel){
-  for(byte i = 0; i < STEP_LENGTH;i++) {
-    chan[channel].gate[i] = false;
-    chan[channel].slide[i] = false;
-    chan[channel].notes[i] =   getDefaultNote();
-  //  digitalWrite(ledPins[i], LOW);
+void sequencer::resetSequence(){
+  for(byte y = 0; y < NUMBER_OF_CHANNELS; y++) {
+    for(byte i = 0; i < STEP_LENGTH;i++) {
+      chan[activeChannel].gate[i] = false;
+      chan[activeChannel].slide[i] = false;
+      //chan[channel].notes[i] =   getDefaultNote();
+    //  digitalWrite(ledPins[i], LOW);
+    }
   }
 }
-//navigation
-void sequencer::nextStep() {
-  oldMenuStep= activeMenuStep;
-  if(activeMenuStep == STEP_LENGTH - 1) {
-    activeMenuStep = 0;
+void sequencer::setCursor(bool direction) {//true = forwards, false = backwards
+  oldMenuStep = activeMenuStep;
+  if(direction == NEXT) {
+    if(activeMenuStep == STEP_LENGTH - 1) {
+      activeMenuStep = 0;
+    } else {
+      activeMenuStep++;
+    }
   } else {
-    activeMenuStep++;
+    if(activeMenuStep == 0) {
+      activeMenuStep = STEP_LENGTH - 1;
+    } else {
+      activeMenuStep--;
+    }
   }
-
   /*if(seqDebug) {
     sprintf(buffer,"active %d",activeMenuStep);
     Serial.println(buffer);
   }*/
 }
 
-void sequencer::prevStep() {
-  oldMenuStep= activeMenuStep;
-  if(activeMenuStep == 0) {
-    activeMenuStep = STEP_LENGTH - 1;
-  } else {
-    activeMenuStep--;
-  }
-}
+
 // will be called from clock
 void sequencer::step(byte channel) {
   if(activeStep == STEP_LENGTH - 1) {
@@ -137,38 +145,21 @@ void sequencer::step(byte channel) {
   } else {
     oldStep = activeStep - 1;
  }
-
+ //send noteOff if previous step sended Note
   if(chan[channel].gate[oldStep]) {
-    sendNoteOff(chan[channel].notes[oldStep]);
+    sendNoteOff(chan[channel].note);
     if (seqDebug) {
       Serial.print(oldStep);
       Serial.print("OFF");
     }
    }
- /* SLIDE IS COMING LATER
- if(slideActive) {
-   if(gate[oldStep] && !slide[activeStep]) {
-     //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[oldStep], 0);
+   if(chan[channel].gate[activeStep] == true) {
+     if (seqDebug) {
+       Serial.print(activeStep);
+       Serial.print("ON");
+     }
+     sendNoteOn(chan[channel].note,chan[channel].velocity[activeStep]);
    }
- } else {
- if(sequencer::slide[oldStep]) {
-    sequencer::lastNoteStep = sequencer::oldStep - 1;
-    while(sequencer::gate[sequencer::lastNoteStep] == false && sequencer::slide[sequencer::lastNoteStep + 1] == true) {
-      if(sequencer::lastNoteStep == 0) {
-        sequencer::lastNoteStep = STEP_LENGTH - 1;
-      } else {
-        sequencer::lastNoteStep -= 1;
-      }
-    }
-    //sendMidi(MIDI_CHANNEL, NOTE_ON, notes[lastNoteStep], 0);
-  */
- if(chan[channel].gate[activeStep] == true) {
-   if (seqDebug) {
-     Serial.print(activeStep);
-     Serial.print("ON");
-   }
-   sendNoteOn(chan[channel].notes[activeStep],DEFAULT_VELOCITY);
- }
 }
 
 //sequencer functions that should connected to midi sginals

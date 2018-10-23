@@ -13,6 +13,10 @@ displaySequencer::displaySequencer(bool debug) {
    lcd.backlight();
    lcd.blink();
    pinMode(buttonPin,INPUT);
+   seq.setActiveChannel(0);
+   for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
+     pinMode(channelPins[i],INPUT);
+   }
    if(debugDisplay) {
      //set baud rate for serial monitor
      Serial.begin(9600);
@@ -49,16 +53,20 @@ void displaySequencer::updateValues(){
   String outNote;
   for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
       lcd.setCursor(0,i);
+
+      outNote = "C";
+      outNote += String(seq.getNote(i));
       if(i == seq.getActiveChannel()) {
-        outNote= "V";
-        outNote += String(seq.getVelocity(seq.getActiveChannel(),seq.getActiveMenuStep()));
+        outNote += ">";
+        //outNote= "V";
+        //outNote += String(seq.getVelocity(seq.getActiveChannel(),seq.getActiveMenuStep()));
       } else {
-        outNote = "C";
-        outNote += String(seq.getNote(i));
+        outNote += " ";
       }
+
       lcd.print(outNote);
   }
-/*byte veloPos = seq.getActiveChannel() + 1;
+  /*byte veloPos = seq.getActiveChannel() + 1;
   if(veloPos == NUMBER_OF_CHANNELS) {
     veloPos = 0;
   }
@@ -90,31 +98,35 @@ void displaySequencer::updateSequence(){
 }
 
 void displaySequencer::updateDisplay(){
-  if(debugDisplay) {
+/*  if(debugDisplay) {
     Serial.print("update Display");
   }
-
+*/
   //updateCursor();
   updateSequence();
   updateValues();
   //after everything ist displayed change the cursor position
   //to active element
-  if(mode < NUMBER_OF_CHANNELS) {//sequence 0
+  //if(mode == 0) {//sequence 0
     lcd.setCursor(seq.getActiveMenuStep() + DISPLAY_OFFSET,seq.getActiveChannel());
-  }/*else if(mode == NUMBER_OF_CHANNELS) {//note
+  /*}*else if(mode == NUMBER_OF_CHANNELS) {//note
     lcd.setCursor(0,3);
-  } */else if (mode == NUMBER_OF_CHANNELS + 1) { //velocity
+  } *else */if (mode == NUMBER_OF_CHANNELS + 1) { //velocity
     lcd.setCursor(0,seq.getActiveChannel());
   }
+  delay(100);
 }
 
 void displaySequencer::checkInputs(){
   newPosition = myEnc.read();
   buttonState = digitalRead(buttonPin);
+  for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
+    channelButtonStates[i] = digitalRead(channelPins[i]);
+  }
   if (newPosition != oldPosition) {
     if(newPosition > oldPosition + 1) {
       //turn right
-      if (buttonState == HIGH){
+    /*  if (buttonState == HIGH) {
         mode++;
         if(mode == NUMBER_OF_CHANNELS) {//mode
           mode = 0;
@@ -126,21 +138,21 @@ void displaySequencer::checkInputs(){
           lcd.setCursor(0,3);
         } else if (mode == NUMBER_OF_CHANNELS + 1) { //velocity
           lcd.setCursor(11,3);
-        }*/
-      } else{
+        }*
+      } else{*/
         /*if(mode == NUMBER_OF_CHANNELS) { //note
           seq.setNoteUp();
-        }*/
+        }
         if(mode == NUMBER_OF_CHANNELS + 1) { //velo
           seq.setVelocityUp();
-        }
-        if (mode = NUMBER_OF_CHANNELS){//cursor
+        }*/
+        if (mode == 0 ){//cursor
           seq.setCursor(NEXT);
         }
-      }
+    //  }
     } else if(newPosition < oldPosition - 1){
         //turn left
-        if (buttonState == HIGH){
+        /*if (buttonState == HIGH){
           mode--;
           if(mode == 255) {//mode
             mode = 2;
@@ -151,23 +163,33 @@ void displaySequencer::checkInputs(){
           }
           if(mode == NUMBER_OF_CHANNELS + 1) { //velo
             seq.setVelocityDown();
-          }
-          if (mode < NUMBER_OF_CHANNELS){//cursor
+          }*/
+          if (mode == 0){//cursor
             seq.setCursor(PREV);
           }
-        }
+        //}
     }
     oldPosition = newPosition;
-    updateDisplay();
   }
   if (buttonState == HIGH && buttonPressed == false) {
+    Serial.println("PRESS");
     seq.setGate();
     seq.setNote();
-    updateDisplay();
+    //updateDisplay();
     buttonPressed = true;
   } else if(buttonState == LOW) {
     buttonPressed = false;
   }
+  for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
+    if (channelButtonStates[i] == HIGH && channelButtonPressed[i] == false) {
+      seq.setActiveChannel(i);
+      //lcd.setCursor(seq.getActiveMenuStep(),seq.getActiveChannel());
+      channelButtonPressed[i] = true;
+    } else if(channelButtonStates[i] == LOW) {
+      channelButtonPressed[i] = false;
+    }
+  }
+  updateDisplay();
 }
 
 void displaySequencer::startingAnimation(){
@@ -181,6 +203,12 @@ void displaySequencer::startingAnimation(){
   lcd.setCursor(0,1);
   lcd.print("MIDI-channel ");
   lcd.print(MIDI_CHANNEL);
+  lcd.setCursor(0,2);
+  lcd.print("<><><><><><><><><><>");
+  lcd.setCursor(0,3);
+  lcd.print("Acid changed my life");
+
+
 
   // update display with all of the above graphics
   //display.display();

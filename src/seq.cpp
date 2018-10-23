@@ -16,6 +16,7 @@ sequencer::sequencer(bool dbg) {
   chan[0].note = 0;
   chan[1].note = 1;
   chan[2].note = 2;
+  chan[3].note = 3;
 }
 byte sequencer::getOldMenuStep(){
   return oldMenuStep;

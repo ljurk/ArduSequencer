@@ -11,13 +11,13 @@ private:
   bool debugDisplay = false;
   LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27,20,4);
   const int buttonPin = 10;
-  const byte channel0Pin = 4;
-  const byte channel1Pin = 5;
-  const byte channel2Pin = 6;
+  const byte channelPins[NUMBER_OF_CHANNELS] = {4,5,6,7};
+  bool channelButtonStates[NUMBER_OF_CHANNELS] = {false,false,false,false};
+  bool channelButtonPressed[NUMBER_OF_CHANNELS] = {false,false,false,false};
   Encoder myEnc = Encoder(2,3);
   unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
   int debounceDelay = 300;
-  int buttonState = 0;
+  bool buttonState = false;
   bool buttonPressed = false;
   long oldPosition  = -999;
   long newPosition =  -999;

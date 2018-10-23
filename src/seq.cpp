@@ -100,7 +100,9 @@ void sequencer::setNote(){
 void sequencer::setSlide(){
 
 }
-
+void sequencer::setActiveChannel(byte channel){
+  activeChannel = channel;
+}
 void sequencer::resetSequence(){
   for(byte y = 0; y < NUMBER_OF_CHANNELS; y++) {
     for(byte i = 0; i < STEP_LENGTH;i++) {

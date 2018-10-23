@@ -2,7 +2,8 @@
 
 
 #define STEP_LENGTH 16
-
+#define NUMBER_OF_CHANNELS 4
+#define DISPLAY_OFFSET 4
 displaySequencer::displaySequencer(bool debug) {
    debugDisplay = debug;
    seq = sequencer(debug);
@@ -45,27 +46,28 @@ void displaySequencer::updateCursor() {
 
 void displaySequencer::updateValues(){
   //display.setTextSize(1);
-  lcd.setCursor(0,3);
-  if(mode == 1) {
-    //display.setTextColor(BLACK);
-    //display.fillRect(0,48, 64, 16, WHITE);
-  } else {
-    //display.setTextColor(WHITE);
+  String outNote;
+  for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
+      lcd.setCursor(0,i);
+      if(i == seq.getActiveChannel()) {
+        outNote= "V";
+        outNote += String(seq.getVelocity(seq.getActiveChannel(),seq.getActiveMenuStep()));
+      } else {
+        outNote = "C";
+        outNote += String(seq.getNote(i));
+      }
+      lcd.print(outNote);
   }
-  String outNote = "NOTE ";
-  outNote += String(seq.getNote(seq.getActiveChannel()));
+/*byte veloPos = seq.getActiveChannel() + 1;
+  if(veloPos == NUMBER_OF_CHANNELS) {
+    veloPos = 0;
+  }
   String outVelo= " VELO ";
   outVelo += String(seq.getVelocity(seq.getActiveChannel(),seq.getActiveMenuStep()));
   //display.setCursor(0,48);
-  lcd.print(outNote);
-  if(mode == 2) {
-    //display.setTextColor(BLACK);
-    //display.fillRect(64,48, 64, 16, WHITE);
-  } else {
-    //display.setTextColor(WHITE);
-  }
-  lcd.setCursor(10,3);
-  lcd.print(outVelo);
+
+  lcd.setCursor(10,veloPos);
+  lcd.print(outVelo);*/
   //display.setTextColor(WHITE);
 }
 
@@ -82,7 +84,7 @@ void displaySequencer::updateSequence(){
           seqString[i] = '-';
         }
     }
-    lcd.setCursor(0,y);
+    lcd.setCursor(DISPLAY_OFFSET,y);
     lcd.print(seqString);
   }
 }
@@ -92,17 +94,17 @@ void displaySequencer::updateDisplay(){
     Serial.print("update Display");
   }
 
-  updateValues();
   //updateCursor();
   updateSequence();
+  updateValues();
   //after everything ist displayed change the cursor position
   //to active element
-  if(mode == 0) {//sequence
-    lcd.setCursor(seq.getActiveMenuStep(),seq.getActiveChannel());
-  } else if(mode == 1) {//note
+  if(mode < NUMBER_OF_CHANNELS) {//sequence 0
+    lcd.setCursor(seq.getActiveMenuStep() + DISPLAY_OFFSET,seq.getActiveChannel());
+  }/*else if(mode == NUMBER_OF_CHANNELS) {//note
     lcd.setCursor(0,3);
-  } else if (mode == 2) { //velocity
-    lcd.setCursor(11,3);
+  } */else if (mode == NUMBER_OF_CHANNELS + 1) { //velocity
+    lcd.setCursor(0,seq.getActiveChannel());
   }
 }
 
@@ -114,24 +116,25 @@ void displaySequencer::checkInputs(){
       //turn right
       if (buttonState == HIGH){
         mode++;
-        if(mode == 3) {//mode
+        if(mode == NUMBER_OF_CHANNELS) {//mode
           mode = 0;
         }
-        if(mode == 0) {
-          lcd.setCursor(seq.getActiveMenuStep(),0);
-        } else if(mode == 1) {
+        if(mode < NUMBER_OF_CHANNELS) {//sequence 0
+          seq.setActiveChannel(mode);
+          lcd.setCursor(seq.getActiveMenuStep(),seq.getActiveChannel());
+        }/*else if(mode == NUMBER_OF_CHANNELS) {//note
           lcd.setCursor(0,3);
-        } else if (mode == 2) {
+        } else if (mode == NUMBER_OF_CHANNELS + 1) { //velocity
           lcd.setCursor(11,3);
-        }
+        }*/
       } else{
-        if(mode == 1) { //note
+        /*if(mode == NUMBER_OF_CHANNELS) { //note
           seq.setNoteUp();
-        }
-        if(mode == 2) { //velo
+        }*/
+        if(mode == NUMBER_OF_CHANNELS + 1) { //velo
           seq.setVelocityUp();
         }
-        if (mode == 0){//cursor
+        if (mode = NUMBER_OF_CHANNELS){//cursor
           seq.setCursor(NEXT);
         }
       }
@@ -143,13 +146,13 @@ void displaySequencer::checkInputs(){
             mode = 2;
           }
         } else{
-          if(mode == 1) { //note
+          if(mode == NUMBER_OF_CHANNELS) { //note
             seq.setNoteDown();
           }
-          if(mode == 2) { //velo
+          if(mode == NUMBER_OF_CHANNELS + 1) { //velo
             seq.setVelocityDown();
           }
-          if (mode == 0){//cursor
+          if (mode < NUMBER_OF_CHANNELS){//cursor
             seq.setCursor(PREV);
           }
         }

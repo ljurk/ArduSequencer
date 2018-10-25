@@ -119,7 +119,7 @@ void displaySequencer::updateDisplay(){
 
 void displaySequencer::checkInputs(){
   newPosition = myEnc.read();
-  buttonState = digitalRead(buttonPin);
+  encoderButtonState = digitalRead(encoderButtonPin);
   for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
     channelButtonStates[i] = digitalRead(channelPins[i]);
   }
@@ -171,14 +171,14 @@ void displaySequencer::checkInputs(){
     }
     oldPosition = newPosition;
   }
-  if (buttonState == HIGH && buttonPressed == false) {
+  if (encoderButtonState == HIGH && encoderButtonPressed == false) {
     Serial.println("PRESS");
     seq.setGate();
     seq.setNote();
     //updateDisplay();
-    buttonPressed = true;
-  } else if(buttonState == LOW) {
-    buttonPressed = false;
+    encoderButtonPressed = true;
+  } else if(encoderButtonState == LOW) {
+    encoderButtonPressed = false;
   }
   for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
     if (channelButtonStates[i] == HIGH && channelButtonPressed[i] == false) {
@@ -192,8 +192,7 @@ void displaySequencer::checkInputs(){
   updateDisplay();
 }
 
-void displaySequencer::startingAnimation(){
-  // initialize and clear display
+void displaySequencer::startingAnimation() {
   if(debugDisplay) {
     Serial.print("startingAnimation");
   }
@@ -208,10 +207,6 @@ void displaySequencer::startingAnimation(){
   lcd.setCursor(0,3);
   lcd.print("Acid changed my life");
 
-
-
-  // update display with all of the above graphics
-  //display.display();
   delay(5000);
   lcd.clear();
 }

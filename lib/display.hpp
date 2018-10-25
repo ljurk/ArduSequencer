@@ -11,6 +11,7 @@ private:
   bool debugDisplay = false;
   LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27,20,4);
   const int encoderButtonPin = 10;
+  const int modeButtonPin = 8;
   const byte channelPins[NUMBER_OF_CHANNELS] = {4,5,6,7};
   bool channelButtonStates[NUMBER_OF_CHANNELS] = {false,false,false,false};
   bool channelButtonPressed[NUMBER_OF_CHANNELS] = {false,false,false,false};
@@ -19,11 +20,14 @@ private:
   int debounceDelay = 300;
   bool encoderButtonState = false;
   bool encoderButtonPressed = false;
+  bool modeButtonState = false;
+  bool modeButtonPressed = false;
   long oldPosition  = -999;
   long newPosition =  -999;
   String seqString ="0000000000000000";
   String cursorString ="0000000000000000";
   byte mode = 0;
+  bool somethingChanged = true;
   sequencer seq;
 public:
   displaySequencer(bool debug);

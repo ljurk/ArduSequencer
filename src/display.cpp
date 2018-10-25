@@ -11,8 +11,10 @@ displaySequencer::displaySequencer(bool debug) {
    //display
    lcd.init();
    lcd.backlight();
-   lcd.blink();
-   pinMode(buttonPin,INPUT);
+   lcd.cursor();
+   lcd.noBlink();
+   pinMode(encoderButtonPin,INPUT);
+   pinMode(modeButtonPin,INPUT);
    seq.setActiveChannel(0);
    for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
      pinMode(channelPins[i],INPUT);
@@ -45,38 +47,39 @@ void displaySequencer::updateCursor() {
     }
     lcd.setCursor(0,1);
     lcd.print(cursorString);
-    //display.setTextSize(1);
 }
 
 void displaySequencer::updateValues(){
-  //display.setTextSize(1);
   String outNote;
   for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
-      lcd.setCursor(0,i);
-
-      outNote = "C";
-      outNote += String(seq.getNote(i));
-      if(i == seq.getActiveChannel()) {
-        outNote += ">";
-        //outNote= "V";
-        //outNote += String(seq.getVelocity(seq.getActiveChannel(),seq.getActiveMenuStep()));
+    lcd.setCursor(0,i);
+    if(i == seq.getActiveChannel()) {
+      if(seq.getVelocity(seq.getActiveChannel(), seq.getActiveMenuStep()) < 10) {
+        outNote= "V";
+        outNote += String(seq.getVelocity(seq.getActiveChannel(),seq.getActiveMenuStep()));
+        outNote += " ";
+      }else if(seq.getVelocity(seq.getActiveChannel(), seq.getActiveMenuStep()) < 100) {
+          outNote= "V";
+          outNote += String(seq.getVelocity(seq.getActiveChannel(),seq.getActiveMenuStep()));
       } else {
+          outNote = String(seq.getVelocity(seq.getActiveChannel(),seq.getActiveMenuStep()));
+      }
+      if(mode == 0) {
+        outNote += ">";
+      } else {
+        outNote += "<";
+      }
+    } else {
+      outNote = seq.getNoteText(i);
+      if(seq.getNoteTextLength(i) == 2) {
+        outNote += "  ";
+      }
+      if(seq.getNoteTextLength(i) == 3) {
         outNote += " ";
       }
-
-      lcd.print(outNote);
+    }
+    lcd.print(outNote);
   }
-  /*byte veloPos = seq.getActiveChannel() + 1;
-  if(veloPos == NUMBER_OF_CHANNELS) {
-    veloPos = 0;
-  }
-  String outVelo= " VELO ";
-  outVelo += String(seq.getVelocity(seq.getActiveChannel(),seq.getActiveMenuStep()));
-  //display.setCursor(0,48);
-
-  lcd.setCursor(10,veloPos);
-  lcd.print(outVelo);*/
-  //display.setTextColor(WHITE);
 }
 
 void displaySequencer::updateActiveStep(){
@@ -86,11 +89,13 @@ void displaySequencer::updateSequence(){
   //displays sequence for each channel
   for(int y = 0; y < NUMBER_OF_CHANNELS; y++) {
     for(int i = 0; i  <STEP_LENGTH; i++) {
-        if(seq.getGate(y, i) == true) {
-          seqString[i] = 'X';
-        } else {
-          seqString[i] = '-';
-        }
+      if(seq.getActiveStep() == i) {
+        seqString[i] = '|';
+      } else if(seq.getGate(y, i) == true) {
+        seqString[i] = 'X';
+      } else {
+        seqString[i] = '-';
+      }
     }
     lcd.setCursor(DISPLAY_OFFSET,y);
     lcd.print(seqString);
@@ -98,90 +103,112 @@ void displaySequencer::updateSequence(){
 }
 
 void displaySequencer::updateDisplay(){
-/*  if(debugDisplay) {
-    Serial.print("update Display");
-  }
-*/
   //updateCursor();
-  updateSequence();
-  updateValues();
-  //after everything ist displayed change the cursor position
-  //to active element
-  //if(mode == 0) {//sequence 0
-    lcd.setCursor(seq.getActiveMenuStep() + DISPLAY_OFFSET,seq.getActiveChannel());
-  /*}*else if(mode == NUMBER_OF_CHANNELS) {//note
-    lcd.setCursor(0,3);
-  } *else */if (mode == NUMBER_OF_CHANNELS + 1) { //velocity
-    lcd.setCursor(0,seq.getActiveChannel());
+  if(somethingChanged) {
+    if(debugDisplay) {
+      Serial.println("Update DIsplay");
+    }
+    updateSequence();
+    updateValues();
+    //after everything ist displayed change the cursor position
+    //to active element
+    //lcd.setCursor(seq.getActiveMenuStep() + DISPLAY_OFFSET,seq.getActiveChannel());
+    somethingChanged = false;
   }
-  delay(100);
+  lcd.setCursor(seq.getActiveMenuStep() + DISPLAY_OFFSET,seq.getActiveChannel());
+  //lcd.print('-');
+//  delay(300);
 }
 
 void displaySequencer::checkInputs(){
   newPosition = myEnc.read();
   encoderButtonState = digitalRead(encoderButtonPin);
+  modeButtonState = digitalRead(modeButtonPin);
   for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
     channelButtonStates[i] = digitalRead(channelPins[i]);
   }
   if (newPosition != oldPosition) {
+    somethingChanged = true;
     if(newPosition > oldPosition + 1) {
       //turn right
-    /*  if (buttonState == HIGH) {
-        mode++;
-        if(mode == NUMBER_OF_CHANNELS) {//mode
-          mode = 0;
+      if (encoderButtonState == HIGH) {
+        if(debugDisplay) {
+          Serial.println("PRESS&ROTATE");
         }
-        if(mode < NUMBER_OF_CHANNELS) {//sequence 0
-          seq.setActiveChannel(mode);
-          lcd.setCursor(seq.getActiveMenuStep(),seq.getActiveChannel());
-        }/*else if(mode == NUMBER_OF_CHANNELS) {//note
-          lcd.setCursor(0,3);
-        } else if (mode == NUMBER_OF_CHANNELS + 1) { //velocity
-          lcd.setCursor(11,3);
-        }*
-      } else{*/
-        /*if(mode == NUMBER_OF_CHANNELS) { //note
-          seq.setNoteUp();
+        if(mode == 0) {
+          seq.setCursor(NEXT);
+          seq.setGate();
+          seq.setNote();
         }
-        if(mode == NUMBER_OF_CHANNELS + 1) { //velo
+        if(mode == 1 ) {
+          seq.setVelocityUp(10);
+        }
+      } else{
+        if(mode == 1) { //velo
           seq.setVelocityUp();
-        }*/
+        }
         if (mode == 0 ){//cursor
           seq.setCursor(NEXT);
         }
-    //  }
+      }
     } else if(newPosition < oldPosition - 1){
-        //turn left
-        /*if (buttonState == HIGH){
-          mode--;
-          if(mode == 255) {//mode
-            mode = 2;
-          }
-        } else{
-          if(mode == NUMBER_OF_CHANNELS) { //note
-            seq.setNoteDown();
-          }
-          if(mode == NUMBER_OF_CHANNELS + 1) { //velo
-            seq.setVelocityDown();
-          }*/
-          if (mode == 0){//cursor
-            seq.setCursor(PREV);
-          }
-        //}
+      //turn left
+      if (encoderButtonState == HIGH) {
+        if(debugDisplay) {
+          Serial.println("PRESS&ROTATE");
+        }
+        if(mode == 0) {
+          seq.setCursor(PREV);
+          seq.setGate();
+          seq.setNote();
+        }
+        if(mode == 1) {
+          seq.setVelocityDown(10);
+        }
+      } else{
+        if(mode == 1) { //velo
+          seq.setVelocityDown();
+        }
+        if (mode == 0 ){//cursor
+          seq.setCursor(PREV);
+        }
+      }
+    }
+    if(debugDisplay) {
+    //  Serial.println(newPosition);
     }
     oldPosition = newPosition;
-  }
-  if (encoderButtonState == HIGH && encoderButtonPressed == false) {
-    Serial.println("PRESS");
-    seq.setGate();
-    seq.setNote();
-    //updateDisplay();
+  }else if(encoderButtonState == HIGH && encoderButtonPressed == false) {
+    somethingChanged = true;
+    if(debugDisplay) {
+      Serial.println("PRESS");
+    }
+    if(mode == 0) {
+      seq.setGate();
+      seq.setNote();
+    }
+
     encoderButtonPressed = true;
   } else if(encoderButtonState == LOW) {
     encoderButtonPressed = false;
   }
+  if(modeButtonState == HIGH && modeButtonPressed == false) {
+    somethingChanged = true;
+    Serial.println("PRESS MODE");
+    if(mode == 0) {
+      //velocity
+      mode = 1;
+    } else {
+      //sequence
+      mode = 0;
+    }
+    modeButtonPressed = true;
+  } else if(modeButtonState == LOW) {
+    modeButtonPressed = false;
+  }
   for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
     if (channelButtonStates[i] == HIGH && channelButtonPressed[i] == false) {
+      somethingChanged = true;
       seq.setActiveChannel(i);
       //lcd.setCursor(seq.getActiveMenuStep(),seq.getActiveChannel());
       channelButtonPressed[i] = true;

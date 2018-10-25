@@ -19,6 +19,7 @@ struct seqChannel {
   bool gate[STEP_LENGTH];
   //byte notes[STEP_LENGTH];
   byte note;
+  String noteText;
   bool slide[STEP_LENGTH];
   byte velocity[STEP_LENGTH];
 };
@@ -47,6 +48,8 @@ public:
   bool getStopped();
   bool getGate(byte channel,byte pos);
   byte getNote(byte channel/*,int pos*/);
+  String getNoteText(byte channel/*,int pos*/);
+  byte getNoteTextLength(byte channel/*,int pos*/);
   bool getSlide(byte channel,byte pos);
   byte getVelocity(byte channel,byte pos);
   byte getOldStep();
@@ -63,8 +66,8 @@ public:
   //set, always depends on activeChannel and activeMenuStep
   void setNoteDown();
   void setNoteUp();
-  void setVelocityUp();
-  void setVelocityDown();
+  void setVelocityUp(int steps = 1);
+  void setVelocityDown(int steps = 1);
   void setSlide();
   void setGate();
   void setNote();

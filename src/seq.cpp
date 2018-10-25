@@ -13,10 +13,14 @@ sequencer::sequencer(bool dbg) {
       chan[y].velocity[i] = DEFAULT_VELOCITY;
     }
   }
-  chan[0].note = 0;
-  chan[1].note = 1;
-  chan[2].note = 2;
-  chan[3].note = 3;
+  chan[0].note = 38;
+  chan[0].noteText = "C1";
+  chan[1].note = 39;
+  chan[1].noteText = "E1";
+  chan[2].note = 43;
+  chan[2].noteText = "G#1";
+  chan[3].note = 45;
+  chan[3].noteText = "A#1";
 }
 byte sequencer::getOldMenuStep(){
   return oldMenuStep;
@@ -52,6 +56,14 @@ bool sequencer::getGate(byte channel, byte pos){
 byte sequencer::getNote(byte channel/*,int pos*/) {
   return chan[channel].note/*s[pos]*/;
 }
+
+String sequencer::getNoteText(byte channel/*,int pos*/) {
+  return chan[channel].noteText/*s[pos]*/;
+}
+
+byte sequencer::getNoteTextLength(byte channel/*,int pos*/) {
+  return chan[channel].noteText.length();/*s[pos]*/;
+}
 byte sequencer::getVelocity(byte channel, byte pos) {
   return chan[channel].velocity[pos];
 }
@@ -76,19 +88,19 @@ void sequencer::setNoteUp(){
   chan[activeChannel].note += 1;
 }
 
-void sequencer::setVelocityUp() {
-  if(chan[activeChannel].velocity[activeMenuStep] == 128) {
+void sequencer::setVelocityUp(int steps) {
+  if(chan[activeChannel].velocity[activeMenuStep] >= 127) {
     chan[activeChannel].velocity[activeMenuStep] = 0;
   } else {
-    chan[activeChannel].velocity[activeMenuStep]++;
+    chan[activeChannel].velocity[activeMenuStep] += steps;
   }
 }
 
-void sequencer::setVelocityDown() {
-  if(chan[activeChannel].velocity[activeMenuStep] == 255) {
+void sequencer::setVelocityDown(int steps) {
+  if(chan[activeChannel].velocity[activeMenuStep] == 0 || (chan[activeChannel].velocity[activeMenuStep] <= 255 && chan[activeChannel].velocity[activeMenuStep] > 127) ) {
     chan[activeChannel].velocity[activeMenuStep] = 127;
   } else{
-    chan[activeChannel].velocity[activeMenuStep]--;
+    chan[activeChannel].velocity[activeMenuStep] -= steps;
   }
 }
 void sequencer::setGate() {

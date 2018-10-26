@@ -22,6 +22,7 @@ struct seqChannel {
   String noteText;
   bool slide[STEP_LENGTH];
   byte velocity[STEP_LENGTH];
+  byte length;
 };
 
 class sequencer {
@@ -52,6 +53,7 @@ public:
   byte getNoteTextLength(byte channel/*,int pos*/);
   bool getSlide(byte channel,byte pos);
   byte getVelocity(byte channel,byte pos);
+  byte getLength(byte channel);
   byte getOldStep();
   byte getOldMenuStep();
   bool getSlideActive();
@@ -68,6 +70,7 @@ public:
   void setNoteUp();
   void setVelocityUp(int steps = 1);
   void setVelocityDown(int steps = 1);
+  void setLength(int steps);
   void setSlide();
   void setGate();
   void setNote();

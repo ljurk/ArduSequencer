@@ -11,6 +11,7 @@ sequencer::sequencer(bool dbg) {
       //chan[y].notes[i] = getDefaultNote();
       chan[y].slide[i] = false;
       chan[y].velocity[i] = DEFAULT_VELOCITY;
+      chan[y].length = STEP_LENGTH;
     }
   }
   chan[0].note = 38;
@@ -68,6 +69,10 @@ byte sequencer::getVelocity(byte channel, byte pos) {
   return chan[channel].velocity[pos];
 }
 
+byte sequencer::getLength(byte channel) {
+  return chan[channel].length;
+}
+
 void sequencer::defaultNoteUp(){
   if(defaultNote != 0) {
     defaultNote -= 1;
@@ -102,6 +107,10 @@ void sequencer::setVelocityDown(int steps) {
   } else{
     chan[activeChannel].velocity[activeMenuStep] -= steps;
   }
+}
+
+void sequencer::setLength(int steps) {
+  chan[activeChannel].length = steps;
 }
 void sequencer::setGate() {
   chan[activeChannel].gate[activeMenuStep] = ! chan[activeChannel].gate[activeMenuStep];
@@ -150,13 +159,13 @@ void sequencer::setCursor(bool direction) {//true = forwards, false = backwards
 
 // will be called from clock
 void sequencer::step(byte channel) {
-  if(activeStep == STEP_LENGTH - 1) {
+  if(activeStep == chan[channel].length - 1) {
     activeStep = 0;
   } else {
     activeStep++;
   }
   if(activeStep == 0) {
-    oldStep = STEP_LENGTH - 1;
+    oldStep = chan[channel].length - 1;
   } else {
     oldStep = activeStep - 1;
  }

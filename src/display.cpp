@@ -89,12 +89,18 @@ void displaySequencer::updateSequence(){
   //displays sequence for each channel
   for(int y = 0; y < NUMBER_OF_CHANNELS; y++) {
     for(int i = 0; i  <STEP_LENGTH; i++) {
-      if(seq.getActiveStep() == i) {
-        seqString[i] = '|';
-      } else if(seq.getGate(y, i) == true) {
-        seqString[i] = 'X';
+      if(seq.getLength(y) > i) {
+        if(seq.getActiveStep() == i) {
+          seqString[i] = '|';
+        } else if(seq.getGate(y, i) == true) {
+          seqString[i] = 'X';
+        } else if((i / 2) == STEP_LENGTH) {
+          seqString[i] = '=';
+        }else {
+          seqString[i] = '-';
+        }
       } else {
-        seqString[i] = '-';
+        seqString[i] = ' ';
       }
     }
     lcd.setCursor(DISPLAY_OFFSET,y);
@@ -121,12 +127,15 @@ void displaySequencer::updateDisplay(){
 }
 
 void displaySequencer::checkInputs(){
+  //get new data from buttons and encoder
   newPosition = myEnc.read();
   encoderButtonState = digitalRead(encoderButtonPin);
   modeButtonState = digitalRead(modeButtonPin);
   for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
     channelButtonStates[i] = digitalRead(channelPins[i]);
   }
+
+  //encoder
   if (newPosition != oldPosition) {
     somethingChanged = true;
     if(newPosition > oldPosition + 1) {
@@ -135,20 +144,30 @@ void displaySequencer::checkInputs(){
         if(debugDisplay) {
           Serial.println("PRESS&ROTATE");
         }
+        //set more steps in sequencer mode
         if(mode == 0) {
           seq.setCursor(NEXT);
           seq.setGate();
           seq.setNote();
         }
+        //faster higher velocity in velocity mode
         if(mode == 1 ) {
           seq.setVelocityUp(10);
         }
-      } else{
+      } else {
         if(mode == 1) { //velo
           seq.setVelocityUp();
         }
         if (mode == 0 ){//cursor
           seq.setCursor(NEXT);
+        }
+      }
+
+      for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
+        if (channelButtonStates[i] == HIGH) {
+          somethingChanged = true;
+          seq.setLength(seq.getLength(i) + 1);
+          channelButtonPressed[i] = true;
         }
       }
     } else if(newPosition < oldPosition - 1){
@@ -173,9 +192,14 @@ void displaySequencer::checkInputs(){
           seq.setCursor(PREV);
         }
       }
-    }
-    if(debugDisplay) {
-    //  Serial.println(newPosition);
+
+      for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
+        if (channelButtonStates[i] == HIGH) {
+          somethingChanged = true;
+          seq.setLength(seq.getLength(i) - 1);
+          channelButtonPressed[i] = true;
+        }
+      }
     }
     oldPosition = newPosition;
   }else if(encoderButtonState == HIGH && encoderButtonPressed == false) {

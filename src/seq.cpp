@@ -22,6 +22,10 @@ sequencer::sequencer(bool dbg) {
   chan[2].noteText = "G#1";
   chan[3].note = 45;
   chan[3].noteText = "A#1";
+
+  chan[1].activeStep = 0;
+  chan[2].activeStep = 0;
+  chan[3].activeStep = 0;
 }
 byte sequencer::getOldMenuStep(){
   return oldMenuStep;
@@ -46,8 +50,8 @@ byte sequencer::getActiveChannel(){
   return activeChannel;
 }
 
-int sequencer::getActiveStep(){
-  return activeStep;
+byte sequencer::getActiveStep(byte channel){
+  return chan[channel].activeStep;
 }
 
 bool sequencer::getGate(byte channel, byte pos){
@@ -159,16 +163,17 @@ void sequencer::setCursor(bool direction) {//true = forwards, false = backwards
 
 // will be called from clock
 void sequencer::step(byte channel) {
-  if(activeStep == chan[channel].length - 1) {
-    activeStep = 0;
+  if(chan[channel].activeStep == chan[channel].length - 1 ) {
+    chan[channel].activeStep = 0;
   } else {
-    activeStep++;
+    chan[channel].activeStep++;
   }
-  if(activeStep == 0) {
+  if(chan[channel].activeStep == 0) {
     oldStep = chan[channel].length - 1;
   } else {
-    oldStep = activeStep - 1;
+    oldStep = chan[channel].activeStep - 1;
  }
+
  //send noteOff if previous step sended Note
   if(chan[channel].gate[oldStep]) {
     sendNoteOff(chan[channel].note);
@@ -177,18 +182,20 @@ void sequencer::step(byte channel) {
       Serial.print("OFF");
     }
    }
-   if(chan[channel].gate[activeStep] == true) {
+   if(chan[channel].gate[chan[channel].activeStep] == true) {
      if (seqDebug) {
-       Serial.print(activeStep);
+       Serial.print(chan[channel].activeStep);
        Serial.print("ON");
      }
-     sendNoteOn(chan[channel].note,chan[channel].velocity[activeStep]);
+     sendNoteOn(chan[channel].note,chan[channel].velocity[chan[channel].activeStep]);
    }
 }
 
 //sequencer functions that should connected to midi sginals
 void sequencer::start() {
-  activeStep = 0;
+  for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
+    chan[i].activeStep = 0;
+  }
   stopped = false;
 }
 
@@ -200,7 +207,9 @@ void sequencer::stop(){
   if(gate[activeStep]) {
     sendNoteOff(notes[activeStep]);
   }*/
-  activeStep=0;
+  for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
+    chan[i].activeStep = 0;
+  }
   count = 0;
 }
 

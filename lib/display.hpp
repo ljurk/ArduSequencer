@@ -8,6 +8,7 @@
 
 class displaySequencer{
 private:
+  int count = 0;
   bool debugDisplay = false;
   LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27,20,4);
   const int encoderButtonPin = 10;

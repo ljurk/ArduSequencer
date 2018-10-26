@@ -30,7 +30,7 @@ displaySequencer::displaySequencer(bool debug) {
 
 void displaySequencer::updateCursor() {
   //not in use
-  if(mode == 0 ) {
+  /*if(mode == 0 ) {
     for(int i = 0; i < STEP_LENGTH ;i++) {
       if(i == seq.getActiveStep()) {
         cursorString[i] = '^';
@@ -47,6 +47,7 @@ void displaySequencer::updateCursor() {
     }
     lcd.setCursor(0,1);
     lcd.print(cursorString);
+    */
 }
 
 void displaySequencer::updateValues(){
@@ -90,11 +91,11 @@ void displaySequencer::updateSequence(){
   for(int y = 0; y < NUMBER_OF_CHANNELS; y++) {
     for(int i = 0; i  <STEP_LENGTH; i++) {
       if(seq.getLength(y) > i) {
-        if(seq.getActiveStep() == i) {
+        if(seq.getActiveStep(y) == i) {
           seqString[i] = '|';
         } else if(seq.getGate(y, i) == true) {
           seqString[i] = 'X';
-        } else if((i / 2) == STEP_LENGTH) {
+        } else if(i == (STEP_LENGTH / 2)) {
           seqString[i] = '=';
         }else {
           seqString[i] = '-';
@@ -272,14 +273,20 @@ void displaySequencer::run() {
        break;
      case MIDI_STOP:
        seq.stop();
+       count = 0;
        updateDisplay();
        break;
      case MIDI_CONT:
        seq.cont();
        break;
      case MIDI_CLOCK:
-        updateDisplay();
         seq.clock();
+        count++;
+        if(count == (24)) {
+            somethingChanged = true;
+            updateDisplay();
+            count = 0;
+       }
        break;
      default:
        break;

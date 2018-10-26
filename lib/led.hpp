@@ -1,4 +1,4 @@
-#include <Arduino.h>
+/*#include <Arduino.h>
 //#include <Wire.h>
 #include "..\lib\seq.hpp"
 #include "..\lib\midi.hpp"
@@ -41,3 +41,4 @@ public:
   void activeMenuBlink();
   void run();
 };
+*/

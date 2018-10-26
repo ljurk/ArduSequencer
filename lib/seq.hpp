@@ -23,6 +23,7 @@ struct seqChannel {
   bool slide[STEP_LENGTH];
   byte velocity[STEP_LENGTH];
   byte length;
+  byte activeStep;
 };
 
 class sequencer {
@@ -33,7 +34,6 @@ private:
   bool stopped = true;
 
   seqChannel chan[NUMBER_OF_CHANNELS];
-  byte activeStep = 0;
   byte oldStep = 0;
   byte oldMenuStep = 0;
   byte activeMenuStep = 0;
@@ -45,7 +45,7 @@ public:
 
   //get
   int getDefaultNote();
-  int getActiveStep();
+  byte getActiveStep(byte channel);
   bool getStopped();
   bool getGate(byte channel,byte pos);
   byte getNote(byte channel/*,int pos*/);

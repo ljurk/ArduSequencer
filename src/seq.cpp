@@ -14,22 +14,20 @@ sequencer::sequencer(bool dbg) {
       chan[y].length = STEP_LENGTH;
     }
   }
-  chan[0].note = 38;
-  chan[0].noteText = "C1";
+  chan[0].note = 36;
+  chan[0].noteText = "KK";
   chan[1].note = 39;
-  chan[1].noteText = "E1";
-  chan[2].note = 43;
-  chan[2].noteText = "G#1";
-  chan[3].note = 45;
-  chan[3].noteText = "A#1";
+  chan[1].noteText = "CP";
+  chan[2].note = 46;
+  chan[2].noteText = "HH";
+  chan[3].note = 38;
+  chan[3].noteText = "SD";
 
   chan[1].activeStep = 0;
   chan[2].activeStep = 0;
   chan[3].activeStep = 0;
 }
-byte sequencer::getOldMenuStep(){
-  return oldMenuStep;
-}
+
 bool sequencer::getSlideActive() {
   return slideActive;
 }
@@ -42,8 +40,8 @@ int sequencer::getDefaultNote() {
   return defaultNote;
 }
 
-byte sequencer::getActiveMenuStep(){
-  return activeMenuStep;
+byte sequencer::getCursorPos(){
+  return cursorPos;
 }
 
 byte sequencer::getActiveChannel(){
@@ -98,18 +96,18 @@ void sequencer::setNoteUp(){
 }
 
 void sequencer::setVelocityUp(int steps) {
-  if(chan[activeChannel].velocity[activeMenuStep] >= 127) {
-    chan[activeChannel].velocity[activeMenuStep] = 0;
+  if(chan[activeChannel].velocity[cursorPos] >= 127) {
+    chan[activeChannel].velocity[cursorPos] = 0;
   } else {
-    chan[activeChannel].velocity[activeMenuStep] += steps;
+    chan[activeChannel].velocity[cursorPos] += steps;
   }
 }
 
 void sequencer::setVelocityDown(int steps) {
-  if(chan[activeChannel].velocity[activeMenuStep] == 0 || (chan[activeChannel].velocity[activeMenuStep] <= 255 && chan[activeChannel].velocity[activeMenuStep] > 127) ) {
-    chan[activeChannel].velocity[activeMenuStep] = 127;
+  if(chan[activeChannel].velocity[cursorPos] == 0 || (chan[activeChannel].velocity[cursorPos] <= 255 && chan[activeChannel].velocity[cursorPos] > 127) ) {
+    chan[activeChannel].velocity[cursorPos] = 127;
   } else{
-    chan[activeChannel].velocity[activeMenuStep] -= steps;
+    chan[activeChannel].velocity[cursorPos] -= steps;
   }
 }
 
@@ -117,7 +115,7 @@ void sequencer::setLength(int steps) {
   chan[activeChannel].length = steps;
 }
 void sequencer::setGate() {
-  chan[activeChannel].gate[activeMenuStep] = ! chan[activeChannel].gate[activeMenuStep];
+  chan[activeChannel].gate[cursorPos] = ! chan[activeChannel].gate[cursorPos];
 }
 
 void sequencer::setNote(){
@@ -139,27 +137,28 @@ void sequencer::resetSequence(){
     }
   }
 }
-void sequencer::setCursor(bool direction) {//true = forwards, false = backwards
-  oldMenuStep = activeMenuStep;
+void sequencer::setCursorPos(bool direction) {//true = forwards, false = backwards
   if(direction == NEXT) {
-    if(activeMenuStep == STEP_LENGTH - 1) {
-      activeMenuStep = 0;
+    if(cursorPos == chan[activeChannel].length - 1) {
+      cursorPos = 0;
     } else {
-      activeMenuStep++;
+      cursorPos++;
     }
   } else {
-    if(activeMenuStep == 0) {
-      activeMenuStep = STEP_LENGTH - 1;
+    if(cursorPos == 0) {
+      cursorPos = chan[activeChannel].length - 1;
     } else {
-      activeMenuStep--;
+      cursorPos--;
     }
   }
-  /*if(seqDebug) {
-    sprintf(buffer,"active %d",activeMenuStep);
-    Serial.println(buffer);
-  }*/
+  if(seqDebug) {
+    Serial.println("setCursor");
+    Serial.println(cursorPos);
+  }
 }
-
+void sequencer::setCursorPosDirect(byte pos) {
+  cursorPos = pos;
+}
 
 // will be called from clock
 void sequencer::step(byte channel) {

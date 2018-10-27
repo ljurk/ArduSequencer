@@ -29,14 +29,13 @@ struct seqChannel {
 class sequencer {
 private:
   int count = 0; // counter for midi ticks, 24 ticks are one quarter note
-  byte speedDivider = 1; //1=24ticks,2=12ticks,4=6ticks
+  byte speedDivider = 4; //1=24ticks,2=12ticks,4=6ticks
   byte defaultNote =  0;
   bool stopped = true;
 
   seqChannel chan[NUMBER_OF_CHANNELS];
   byte oldStep = 0;
-  byte oldMenuStep = 0;
-  byte activeMenuStep = 0;
+  byte cursorPos = 0;
   byte activeChannel = 0;
   bool slideActive = false;
   bool seqDebug = false;
@@ -55,9 +54,9 @@ public:
   byte getVelocity(byte channel,byte pos);
   byte getLength(byte channel);
   byte getOldStep();
-  byte getOldMenuStep();
+  byte getOldCursorPos();
   bool getSlideActive();
-  byte getActiveMenuStep();
+  byte getCursorPos();
   byte getActiveChannel();
 
   void defaultNoteUp();
@@ -65,7 +64,7 @@ public:
   void resetSequence();
   void step(byte channel);
 
-  //set, always depends on activeChannel and activeMenuStep
+  //set, always depends on activeChannel and cursorPos
   void setNoteDown();
   void setNoteUp();
   void setVelocityUp(int steps = 1);
@@ -76,8 +75,8 @@ public:
   void setNote();
   //navigation
   void setActiveChannel(byte channel);
-  void setCursor(bool direction); //true = forwards, false = backwards
-
+  void setCursorPos(bool direction); //true = forwards, false = backwards
+  void setCursorPosDirect(byte pos);
 
   void start();
   void stop();

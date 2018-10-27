@@ -23,22 +23,28 @@ private:
   bool encoderButtonPressed = false;
   bool modeButtonState = false;
   bool modeButtonPressed = false;
-  long oldPosition  = -999;
-  long newPosition =  -999;
+  long oldEncoderPos  = -999;
+  long newEncoderPos =  -999;
   String seqString ="0000000000000000";
   String cursorString ="0000000000000000";
   byte mode = 0;
   bool somethingChanged = true;
+  bool activeStepChanged = true;
+  bool cursorChanged = true;
+  bool sequenceChanged = true;
+  bool valuesChanged = true;
   sequencer seq;
-public:
-  displaySequencer(bool debug);
+
   void step(byte pos);
-  void startingAnimation();
   void updateValues();
   void updateCursor();
   void updateSequence();
   void updateDisplay();
-  void run();
   void checkInputs();
   void updateActiveStep();
+public:
+  displaySequencer(bool debug);
+  void startingAnimation();
+  void run();
+
 };

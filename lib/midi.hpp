@@ -9,7 +9,7 @@
 //for MIDI OUT
 #ifdef MIDI_CHANNEL
 #else
-  #define MIDI_CHANNEL 11 //0-15 represents channels 1-16
+  #define MIDI_CHANNEL 14 //0-15 represents channels 1-16
 #endif
 
 void sendMidi(byte channel, byte command, byte arg1, byte arg2);

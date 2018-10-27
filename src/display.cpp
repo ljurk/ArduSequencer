@@ -34,7 +34,7 @@ void displaySequencer::updateCursor() {
     for(int i = 0; i < STEP_LENGTH ;i++) {
       if(i == seq.getActiveStep()) {
         cursorString[i] = '^';
-      }else if(i == seq.getActiveMenuStep()) {
+      }else if(i == seq.getCursorPos()) {
           cursorString[i] =' ';
         } else {
           cursorString[i] = ' ';
@@ -55,15 +55,16 @@ void displaySequencer::updateValues(){
   for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
     lcd.setCursor(0,i);
     if(i == seq.getActiveChannel()) {
-      if(seq.getVelocity(seq.getActiveChannel(), seq.getActiveMenuStep()) < 10) {
+      if(seq.getVelocity(seq.getActiveChannel(), seq.getCursorPos()) < 10) {
         outNote= "V";
-        outNote += String(seq.getVelocity(seq.getActiveChannel(),seq.getActiveMenuStep()));
+        outNote += String(seq.getVelocity(seq.getActiveChannel(),seq.getCursorPos()));
+        //outNote += String(seq.getActiveStep(i));
         outNote += " ";
-      }else if(seq.getVelocity(seq.getActiveChannel(), seq.getActiveMenuStep()) < 100) {
+      }else if(seq.getVelocity(seq.getActiveChannel(), seq.getCursorPos()) < 100) {
           outNote= "V";
-          outNote += String(seq.getVelocity(seq.getActiveChannel(),seq.getActiveMenuStep()));
+          outNote += String(seq.getVelocity(seq.getActiveChannel(),seq.getCursorPos()));
       } else {
-          outNote = String(seq.getVelocity(seq.getActiveChannel(),seq.getActiveMenuStep()));
+          outNote = String(seq.getVelocity(seq.getActiveChannel(),seq.getCursorPos()));
       }
       if(mode == 0) {
         outNote += ">";
@@ -95,7 +96,7 @@ void displaySequencer::updateSequence(){
           seqString[i] = '|';
         } else if(seq.getGate(y, i) == true) {
           seqString[i] = 'X';
-        } else if(i == (STEP_LENGTH / 2)) {
+        } else if(i == (STEP_LENGTH / 2) || i == (STEP_LENGTH / 4) || i == 0 ) {
           seqString[i] = '=';
         }else {
           seqString[i] = '-';
@@ -111,25 +112,36 @@ void displaySequencer::updateSequence(){
 
 void displaySequencer::updateDisplay(){
   //updateCursor();
-  if(somethingChanged) {
+  if(sequenceChanged) {
     if(debugDisplay) {
-      Serial.println("Update DIsplay");
+      Serial.println("Update sequence");
     }
     updateSequence();
+    sequenceChanged = false;
+  }
+  if(valuesChanged) {
     updateValues();
+    valuesChanged = false;
+  }
+
     //after everything ist displayed change the cursor position
     //to active element
-    //lcd.setCursor(seq.getActiveMenuStep() + DISPLAY_OFFSET,seq.getActiveChannel());
-    somethingChanged = false;
-  }
-  lcd.setCursor(seq.getActiveMenuStep() + DISPLAY_OFFSET,seq.getActiveChannel());
+    //lcd.setCursor(seq.getCursorPos() + DISPLAY_OFFSET,seq.getActiveChannel());
+    if(cursorChanged) {
+      if(debugDisplay) {
+        Serial.print(seq.getCursorPos());
+      }
+        lcd.setCursor(seq.getCursorPos() + DISPLAY_OFFSET,seq.getActiveChannel());
+        cursorChanged = false;
+    }
+
   //lcd.print('-');
 //  delay(300);
 }
 
 void displaySequencer::checkInputs(){
   //get new data from buttons and encoder
-  newPosition = myEnc.read();
+  newEncoderPos = myEnc.read();
   encoderButtonState = digitalRead(encoderButtonPin);
   modeButtonState = digitalRead(modeButtonPin);
   for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
@@ -137,74 +149,98 @@ void displaySequencer::checkInputs(){
   }
 
   //encoder
-  if (newPosition != oldPosition) {
-    somethingChanged = true;
-    if(newPosition > oldPosition + 1) {
-      //turn right
+  if (newEncoderPos != oldEncoderPos) {
+    if(debugDisplay) {
+      Serial.print("turn");
+      Serial.println(mode);
+      Serial.println(oldEncoderPos);
+      Serial.println(newEncoderPos);
+    }
+    if(mode == 0) {
+      cursorChanged = true;
+    }
+    if(newEncoderPos > oldEncoderPos + 2) {
+      if(debugDisplay) {
+        Serial.println("turn right");
+      }
       if (encoderButtonState == HIGH) {
         if(debugDisplay) {
           Serial.println("PRESS&ROTATE");
         }
         //set more steps in sequencer mode
         if(mode == 0) {
-          seq.setCursor(NEXT);
+          seq.setCursorPos(NEXT);
           seq.setGate();
           seq.setNote();
+          sequenceChanged = true;
         }
         //faster higher velocity in velocity mode
         if(mode == 1 ) {
           seq.setVelocityUp(10);
+          valuesChanged = true;
         }
       } else {
         if(mode == 1) { //velo
           seq.setVelocityUp();
+          valuesChanged = true;
         }
         if (mode == 0 ){//cursor
-          seq.setCursor(NEXT);
+          seq.setCursorPos(NEXT);
+          cursorChanged = true;
         }
       }
 
       for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
         if (channelButtonStates[i] == HIGH) {
-          somethingChanged = true;
+          sequenceChanged = true;
           seq.setLength(seq.getLength(i) + 1);
-          channelButtonPressed[i] = true;
         }
       }
-    } else if(newPosition < oldPosition - 1){
+      oldEncoderPos = newEncoderPos;
+    } else if(newEncoderPos < oldEncoderPos - 2) {
       //turn left
+      if(debugDisplay) {
+        Serial.println("turn left");
+      }
       if (encoderButtonState == HIGH) {
         if(debugDisplay) {
           Serial.println("PRESS&ROTATE");
         }
         if(mode == 0) {
-          seq.setCursor(PREV);
+          seq.setCursorPos(PREV);
           seq.setGate();
           seq.setNote();
+          sequenceChanged = true;
+          cursorChanged = true;
         }
         if(mode == 1) {
           seq.setVelocityDown(10);
+          valuesChanged = true;
         }
       } else{
         if(mode == 1) { //velo
           seq.setVelocityDown();
+          valuesChanged = true;
         }
         if (mode == 0 ){//cursor
-          seq.setCursor(PREV);
+          seq.setCursorPos(PREV);
+          cursorChanged = true;
         }
       }
 
       for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
         if (channelButtonStates[i] == HIGH) {
-          somethingChanged = true;
+          sequenceChanged = true;
           seq.setLength(seq.getLength(i) - 1);
-          channelButtonPressed[i] = true;
         }
       }
+      oldEncoderPos = newEncoderPos;
     }
-    oldPosition = newPosition;
-  }else if(encoderButtonState == HIGH && encoderButtonPressed == false) {
-    somethingChanged = true;
+
+
+  }
+  if(encoderButtonState == HIGH && encoderButtonPressed == false) {
+    sequenceChanged = true;
     if(debugDisplay) {
       Serial.println("PRESS");
     }
@@ -212,14 +248,15 @@ void displaySequencer::checkInputs(){
       seq.setGate();
       seq.setNote();
     }
-
     encoderButtonPressed = true;
   } else if(encoderButtonState == LOW) {
     encoderButtonPressed = false;
   }
   if(modeButtonState == HIGH && modeButtonPressed == false) {
-    somethingChanged = true;
-    Serial.println("PRESS MODE");
+    valuesChanged = true;
+    if(debugDisplay) {
+        Serial.println("PRESS MODE");
+    }
     if(mode == 0) {
       //velocity
       mode = 1;
@@ -233,9 +270,13 @@ void displaySequencer::checkInputs(){
   }
   for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
     if (channelButtonStates[i] == HIGH && channelButtonPressed[i] == false) {
-      somethingChanged = true;
+      cursorChanged = true;
+      valuesChanged = true;
       seq.setActiveChannel(i);
-      //lcd.setCursor(seq.getActiveMenuStep(),seq.getActiveChannel());
+      if(seq.getCursorPos() >= seq.getLength(i)) {
+        seq.setCursorPosDirect(seq.getLength(i) - 1);
+      }
+      //lcd.setCursor(seq.getCursorPos(),seq.getActiveChannel());
       channelButtonPressed[i] = true;
     } else if(channelButtonStates[i] == LOW) {
       channelButtonPressed[i] = false;
@@ -253,13 +294,16 @@ void displaySequencer::startingAnimation() {
   lcd.print("SEQ v3.0.3 #23.23");
   lcd.setCursor(0,1);
   lcd.print("MIDI-channel ");
-  lcd.print(MIDI_CHANNEL);
-  lcd.setCursor(0,2);
-  lcd.print("<><><><><><><><><><>");
+  lcd.print(MIDI_CHANNEL + 1);
+
   lcd.setCursor(0,3);
   lcd.print("Acid changed my life");
 
-  delay(5000);
+  for(int i = 0; i < 20; i++) {
+    lcd.setCursor(i,2);
+    lcd.print('.');
+    delay(500);
+  }
   lcd.clear();
 }
 
@@ -282,8 +326,8 @@ void displaySequencer::run() {
      case MIDI_CLOCK:
         seq.clock();
         count++;
-        if(count == (24)) {
-            somethingChanged = true;
+        if(count == (6)) {
+            sequenceChanged = true;
             updateDisplay();
             count = 0;
        }

@@ -23,9 +23,14 @@ sequencer::sequencer(bool dbg) {
   chan[3].note = 38;
   chan[3].noteText = "SD";
 
+  chan[0].activeStep = 0;
   chan[1].activeStep = 0;
   chan[2].activeStep = 0;
   chan[3].activeStep = 0;
+  chan[0].oldStep = 0;
+  chan[1].oldStep = 0;
+  chan[2].oldStep = 0;
+  chan[3].oldStep = 0;
 }
 
 bool sequencer::getSlideActive() {
@@ -50,6 +55,10 @@ byte sequencer::getActiveChannel(){
 
 byte sequencer::getActiveStep(byte channel){
   return chan[channel].activeStep;
+}
+
+byte sequencer::getOldStep(byte channel){
+  return chan[channel].oldStep;
 }
 
 bool sequencer::getGate(byte channel, byte pos){
@@ -162,22 +171,23 @@ void sequencer::setCursorPosDirect(byte pos) {
 
 // will be called from clock
 void sequencer::step(byte channel) {
+  chan[channel].oldStep  = chan[channel].activeStep;
   if(chan[channel].activeStep == chan[channel].length - 1 ) {
     chan[channel].activeStep = 0;
   } else {
     chan[channel].activeStep++;
   }
-  if(chan[channel].activeStep == 0) {
-    oldStep = chan[channel].length - 1;
+/*  if(chan[channel].activeStep == 0) {
+    chan[channel].oldStep = chan[channel].length - 1;
   } else {
-    oldStep = chan[channel].activeStep - 1;
- }
+    chan[channel].oldStep = chan[channel].activeStep - 1;
+ }*/
 
  //send noteOff if previous step sended Note
-  if(chan[channel].gate[oldStep]) {
+  if(chan[channel].gate[chan[channel].oldStep]) {
     sendNoteOff(chan[channel].note);
     if (seqDebug) {
-      Serial.print(oldStep);
+      Serial.print(chan[channel].oldStep);
       Serial.print("OFF");
     }
    }
@@ -194,6 +204,7 @@ void sequencer::step(byte channel) {
 void sequencer::start() {
   for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
     chan[i].activeStep = 0;
+    chan[i].oldStep = 0;
   }
   stopped = false;
 }
@@ -208,6 +219,7 @@ void sequencer::stop(){
   }*/
   for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
     chan[i].activeStep = 0;
+    chan[i].oldStep = 0;
   }
   count = 0;
 }

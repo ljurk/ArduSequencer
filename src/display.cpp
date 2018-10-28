@@ -22,6 +22,7 @@ displaySequencer::displaySequencer(bool debug) {
    if(debugDisplay) {
      //set baud rate for serial monitor
      Serial.begin(9600);
+     seq.start();
    } else {
      // set MIDI baud
      Serial.begin(31250);
@@ -85,6 +86,24 @@ void displaySequencer::updateValues(){
 }
 
 void displaySequencer::updateActiveStep(){
+  for(int i = 0; i< NUMBER_OF_CHANNELS; i ++) {
+    if(debugDisplay) {
+      Serial.print("gate oldStep");
+      Serial.println(seq.getGate(i, seq.getOldStep(i)));
+      Serial.print("gate activeStep");
+      Serial.println(seq.getGate(i, seq.getActiveStep(i)));
+    }
+    lcd.setCursor(DISPLAY_OFFSET + seq.getOldStep(i),i);
+    if(seq.getGate(i, seq.getOldStep(i))) {
+        lcd.print('X');
+    } else if(seq.getOldStep(i) == (STEP_LENGTH / 2) || seq.getOldStep(i) == (STEP_LENGTH / 4) || seq.getOldStep(i) == 0 ) {
+      lcd.print('=');
+    }else  {
+      lcd.print('-');
+    }
+      lcd.setCursor(DISPLAY_OFFSET + seq.getActiveStep(i),i);
+      lcd.print('|');
+  }
 
 }
 void displaySequencer::updateSequence(){
@@ -112,6 +131,10 @@ void displaySequencer::updateSequence(){
 
 void displaySequencer::updateDisplay(){
   //updateCursor();
+  if(activeStepChanged) {
+    updateActiveStep();
+    activeStepChanged = false;
+  }
   if(sequenceChanged) {
     if(debugDisplay) {
       Serial.println("Update sequence");
@@ -120,6 +143,9 @@ void displaySequencer::updateDisplay(){
     sequenceChanged = false;
   }
   if(valuesChanged) {
+    if(debugDisplay) {
+      Serial.println("Update values");
+    }
     updateValues();
     valuesChanged = false;
   }
@@ -129,6 +155,7 @@ void displaySequencer::updateDisplay(){
     //lcd.setCursor(seq.getCursorPos() + DISPLAY_OFFSET,seq.getActiveChannel());
     if(cursorChanged) {
       if(debugDisplay) {
+        Serial.println("UpdateCursor");
         Serial.print(seq.getCursorPos());
       }
         lcd.setCursor(seq.getCursorPos() + DISPLAY_OFFSET,seq.getActiveChannel());
@@ -150,15 +177,6 @@ void displaySequencer::checkInputs(){
 
   //encoder
   if (newEncoderPos != oldEncoderPos) {
-    if(debugDisplay) {
-      Serial.print("turn");
-      Serial.println(mode);
-      Serial.println(oldEncoderPos);
-      Serial.println(newEncoderPos);
-    }
-    if(mode == 0) {
-      cursorChanged = true;
-    }
     if(newEncoderPos > oldEncoderPos + 2) {
       if(debugDisplay) {
         Serial.println("turn right");
@@ -173,6 +191,7 @@ void displaySequencer::checkInputs(){
           seq.setGate();
           seq.setNote();
           sequenceChanged = true;
+          cursorChanged = true;
         }
         //faster higher velocity in velocity mode
         if(mode == 1 ) {
@@ -193,6 +212,7 @@ void displaySequencer::checkInputs(){
       for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
         if (channelButtonStates[i] == HIGH) {
           sequenceChanged = true;
+          cursorChanged = true;
           seq.setLength(seq.getLength(i) + 1);
         }
       }
@@ -231,6 +251,7 @@ void displaySequencer::checkInputs(){
       for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
         if (channelButtonStates[i] == HIGH) {
           sequenceChanged = true;
+          cursorChanged = true;
           seq.setLength(seq.getLength(i) - 1);
         }
       }
@@ -257,13 +278,20 @@ void displaySequencer::checkInputs(){
     if(debugDisplay) {
         Serial.println("PRESS MODE");
     }
+    /*
     if(mode == 0) {
       //velocity
       mode = 1;
     } else {
       //sequence
       mode = 0;
+    }*/
+    for (int i= 0; i< 12; i++) {
+          seq.clock();
     }
+    activeStepChanged = true;
+    updateDisplay();
+
     modeButtonPressed = true;
   } else if(modeButtonState == LOW) {
     modeButtonPressed = false;
@@ -309,31 +337,33 @@ void displaySequencer::startingAnimation() {
 
 void displaySequencer::run() {
  checkInputs();
- if(Serial.available()  > 0) {
-   byte byte_read = Serial.read();
-   switch(byte_read) {
-     case MIDI_START:
-         seq.start();
-       break;
-     case MIDI_STOP:
-       seq.stop();
-       count = 0;
-       updateDisplay();
-       break;
-     case MIDI_CONT:
-       seq.cont();
-       break;
-     case MIDI_CLOCK:
-        seq.clock();
-        count++;
-        if(count == (6)) {
-            sequenceChanged = true;
-            updateDisplay();
-            count = 0;
-       }
-       break;
-     default:
-       break;
+  if(!debugDisplay) {
+   if(Serial.available()  > 0) {
+     byte byte_read = Serial.read();
+     switch(byte_read) {
+       case MIDI_START:
+           seq.start();
+         break;
+       case MIDI_STOP:
+         seq.stop();
+         count = 0;
+         updateDisplay();
+         break;
+       case MIDI_CONT:
+         seq.cont();
+         break;
+       case MIDI_CLOCK:
+          seq.clock();
+          count++;
+          if(count == (12)) {
+              activeStepChanged = true;
+              updateDisplay();
+              count = 0;
+         }
+         break;
+       default:
+         break;
+     }
    }
- }
+  }
 }

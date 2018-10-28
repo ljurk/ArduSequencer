@@ -58,11 +58,17 @@ void displaySequencer::updateValues(){
     if(i == seq.getActiveChannel()) {
       if(seq.getVelocity(seq.getActiveChannel(), seq.getCursorPos()) < 10) {
         outNote= "V";
+        if(seq.getMute(i)) {
+            outNote.toLowerCase();
+        }
         outNote += String(seq.getVelocity(seq.getActiveChannel(),seq.getCursorPos()));
         //outNote += String(seq.getActiveStep(i));
         outNote += " ";
       }else if(seq.getVelocity(seq.getActiveChannel(), seq.getCursorPos()) < 100) {
           outNote= "V";
+          if(seq.getMute(i)) {
+              outNote.toLowerCase();
+          }
           outNote += String(seq.getVelocity(seq.getActiveChannel(),seq.getCursorPos()));
       } else {
           outNote = String(seq.getVelocity(seq.getActiveChannel(),seq.getCursorPos()));
@@ -74,6 +80,9 @@ void displaySequencer::updateValues(){
       }
     } else {
       outNote = seq.getNoteText(i);
+      if(seq.getMute(i)) {
+        outNote.toLowerCase();
+      }
       if(seq.getNoteTextLength(i) == 2) {
         outNote += "  ";
       }
@@ -115,7 +124,8 @@ void displaySequencer::updateSequence(){
           seqString[i] = '|';
         } else if(seq.getGate(y, i) == true) {
           seqString[i] = 'X';
-        } else if(i == (STEP_LENGTH / 2) || i == (STEP_LENGTH / 4) || i == 0 ) {
+        } else if((i % (STEP_LENGTH / 4)) == 0) {
+          //marks every 4th step with a =
           seqString[i] = '=';
         }else {
           seqString[i] = '-';
@@ -278,32 +288,39 @@ void displaySequencer::checkInputs(){
     if(debugDisplay) {
         Serial.println("PRESS MODE");
     }
-    /*
+
     if(mode == 0) {
       //velocity
       mode = 1;
     } else {
       //sequence
       mode = 0;
-    }*/
-    for (int i= 0; i< 12; i++) {
-          seq.clock();
     }
-    activeStepChanged = true;
-    updateDisplay();
-
+    if(debugDisplay) {
+      for (int i= 0; i< 12; i++) {
+            seq.clock();
+      }
+      activeStepChanged = true;
+    }
     modeButtonPressed = true;
   } else if(modeButtonState == LOW) {
     modeButtonPressed = false;
   }
   for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
     if (channelButtonStates[i] == HIGH && channelButtonPressed[i] == false) {
-      cursorChanged = true;
-      valuesChanged = true;
-      seq.setActiveChannel(i);
-      if(seq.getCursorPos() >= seq.getLength(i)) {
-        seq.setCursorPosDirect(seq.getLength(i) - 1);
+      if(mode == 0) {
+        cursorChanged = true;
+        valuesChanged = true;
+        seq.setActiveChannel(i);
+        if(seq.getCursorPos() >= seq.getLength(i)) {
+          seq.setCursorPosDirect(seq.getLength(i) - 1);
+        }
       }
+      if(mode == 1) {
+        seq.setMute(i);
+        valuesChanged = true;
+      }
+
       //lcd.setCursor(seq.getCursorPos(),seq.getActiveChannel());
       channelButtonPressed[i] = true;
     } else if(channelButtonStates[i] == LOW) {

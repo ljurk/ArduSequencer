@@ -25,6 +25,7 @@ struct seqChannel {
   byte length;
   byte activeStep;
   byte oldStep;
+  bool mute;
 };
 
 class sequencer {
@@ -59,6 +60,7 @@ public:
   bool getSlideActive();
   byte getCursorPos();
   byte getActiveChannel();
+  bool getMute(byte channel);
 
   void defaultNoteUp();
   void defaultNoteDown();
@@ -74,6 +76,7 @@ public:
   void setSlide();
   void setGate();
   void setNote();
+  void setMute(byte channel);
   //navigation
   void setActiveChannel(byte channel);
   void setCursorPos(bool direction); //true = forwards, false = backwards

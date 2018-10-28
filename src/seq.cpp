@@ -13,6 +13,9 @@ sequencer::sequencer(bool dbg) {
       chan[y].velocity[i] = DEFAULT_VELOCITY;
       chan[y].length = STEP_LENGTH;
     }
+      chan[y].activeStep = 0;
+      chan[y].oldStep = 0;
+      chan[y].mute = false;
   }
   chan[0].note = 36;
   chan[0].noteText = "KK";
@@ -23,14 +26,6 @@ sequencer::sequencer(bool dbg) {
   chan[3].note = 38;
   chan[3].noteText = "SD";
 
-  chan[0].activeStep = 0;
-  chan[1].activeStep = 0;
-  chan[2].activeStep = 0;
-  chan[3].activeStep = 0;
-  chan[0].oldStep = 0;
-  chan[1].oldStep = 0;
-  chan[2].oldStep = 0;
-  chan[3].oldStep = 0;
 }
 
 bool sequencer::getSlideActive() {
@@ -82,6 +77,10 @@ byte sequencer::getVelocity(byte channel, byte pos) {
 
 byte sequencer::getLength(byte channel) {
   return chan[channel].length;
+}
+
+bool sequencer::getMute(byte channel) {
+  return chan[channel].mute;
 }
 
 void sequencer::defaultNoteUp(){
@@ -136,6 +135,10 @@ void sequencer::setSlide(){
 void sequencer::setActiveChannel(byte channel){
   activeChannel = channel;
 }
+
+void sequencer::setMute(byte channel) {
+  chan[channel].mute = !chan[channel].mute;
+}
 void sequencer::resetSequence(){
   for(byte y = 0; y < NUMBER_OF_CHANNELS; y++) {
     for(byte i = 0; i < STEP_LENGTH;i++) {
@@ -184,20 +187,22 @@ void sequencer::step(byte channel) {
  }*/
 
  //send noteOff if previous step sended Note
-  if(chan[channel].gate[chan[channel].oldStep]) {
-    sendNoteOff(chan[channel].note);
-    if (seqDebug) {
-      Serial.print(chan[channel].oldStep);
-      Serial.print("OFF");
-    }
-   }
-   if(chan[channel].gate[chan[channel].activeStep] == true) {
+ if(chan[channel].mute == false) {
+   if(chan[channel].gate[chan[channel].oldStep]) {
+     sendNoteOff(chan[channel].note);
      if (seqDebug) {
-       Serial.print(chan[channel].activeStep);
-       Serial.print("ON");
+       Serial.print(chan[channel].oldStep);
+       Serial.print("OFF");
      }
-     sendNoteOn(chan[channel].note,chan[channel].velocity[chan[channel].activeStep]);
-   }
+    }
+    if(chan[channel].gate[chan[channel].activeStep] == true) {
+      if (seqDebug) {
+        Serial.print(chan[channel].activeStep);
+        Serial.print("ON");
+      }
+      sendNoteOn(chan[channel].note,chan[channel].velocity[chan[channel].activeStep]);
+    }
+ }
 }
 
 //sequencer functions that should connected to midi sginals

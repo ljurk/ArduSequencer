@@ -19,6 +19,8 @@ displaySequencer::displaySequencer(bool debug) {
    for(int i = 0; i < NUMBER_OF_CHANNELS; i++) {
      pinMode(channelPins[i],INPUT);
    }
+
+
    if(debugDisplay) {
      //set baud rate for serial monitor
      Serial.begin(9600);
@@ -104,14 +106,22 @@ void displaySequencer::updateActiveStep(){
     }
     lcd.setCursor(DISPLAY_OFFSET + seq.getOldStep(i),i);
     if(seq.getGate(i, seq.getOldStep(i))) {
-        lcd.print('X');
-    } else if(seq.getOldStep(i) == (STEP_LENGTH / 2) || seq.getOldStep(i) == (STEP_LENGTH / 4) || seq.getOldStep(i) == 0 ) {
-      lcd.print('=');
-    }else  {
-      lcd.print('-');
+        if(seq.getCursorPos() == seq.getOldStep(i)) {
+          lcd.print(cursorFiledStepSymbol);
+        } else {
+          lcd.print(filedStepSymbol);
+        }
+    } else if((seq.getOldStep(i) % (STEP_LENGTH / 4)) == 0) {
+      lcd.print(quarterSymbol);
+    } else {
+      if(seq.getCursorPos() == seq.getOldStep(i)) {
+        lcd.print(cursorEmptyStepSymbol);
+      } else {
+        lcd.print(emptyStepSymbol);
+      }
     }
       lcd.setCursor(DISPLAY_OFFSET + seq.getActiveStep(i),i);
-      lcd.print('|');
+      lcd.print(activeStepSymbol);
   }
 
 }
@@ -121,14 +131,20 @@ void displaySequencer::updateSequence(){
     for(int i = 0; i  <STEP_LENGTH; i++) {
       if(seq.getLength(y) > i) {
         if(seq.getActiveStep(y) == i) {
-          seqString[i] = '|';
+          seqString[i] = activeStepSymbol;
         } else if(seq.getGate(y, i) == true) {
-          seqString[i] = 'X';
-        } else if((i % (STEP_LENGTH / 4)) == 0) {
+          if(seq.getCursorPos() == i) {
+            seqString[i] = cursorFiledStepSymbol;
+          } else {
+            seqString[i] = filedStepSymbol;
+          }
+        } else if(i == seq.getCursorPos() && y == seq.getActiveChannel()) {
+          seqString[i] = cursorEmptyStepSymbol;
+        }else if((i % (STEP_LENGTH / 4)) == 0) {
           //marks every 4th step with a =
-          seqString[i] = '=';
+          seqString[i] = quarterSymbol;
         }else {
-          seqString[i] = '-';
+          seqString[i] = emptyStepSymbol;
         }
       } else {
         seqString[i] = ' ';
@@ -145,12 +161,13 @@ void displaySequencer::updateDisplay(){
     updateActiveStep();
     activeStepChanged = false;
   }
-  if(sequenceChanged) {
+  if(sequenceChanged || cursorChanged) {
     if(debugDisplay) {
       Serial.println("Update sequence");
     }
     updateSequence();
     sequenceChanged = false;
+    cursorChanged = false;
   }
   if(valuesChanged) {
     if(debugDisplay) {
@@ -340,14 +357,25 @@ void displaySequencer::startingAnimation() {
   lcd.setCursor(0,1);
   lcd.print("MIDI-channel ");
   lcd.print(MIDI_CHANNEL + 1);
-
   lcd.setCursor(0,3);
   lcd.print("Acid changed my life");
 
   for(int i = 0; i < 20; i++) {
     lcd.setCursor(i,2);
     lcd.print('.');
-    delay(500);
+    delay(200);
+  }
+  String test = "<><>made by Lukn<><>";
+  for(int i = 0; i < 20; i++) {
+    lcd.setCursor(i,0);
+    lcd.print('.');
+    lcd.setCursor(20 - i,1);
+    lcd.print('.');
+    lcd.setCursor(i,2);
+    lcd.print(test[i]);
+    lcd.setCursor(20 - i,3);
+    lcd.print('.');
+    delay(200);
   }
   lcd.clear();
 }

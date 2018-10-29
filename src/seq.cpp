@@ -17,15 +17,24 @@ sequencer::sequencer(bool dbg) {
       chan[y].oldStep = 0;
       chan[y].mute = false;
   }
-  chan[0].note = 36;
+  //mfb
+  /*chan[0].note = 36;
   chan[0].noteText = "KK";
   chan[1].note = 39;
   chan[1].noteText = "CP";
   chan[2].note = 46;
   chan[2].noteText = "HH";
   chan[3].note = 38;
-  chan[3].noteText = "SD";
-
+  chan[3].noteText = "SD";*/
+  //microgranny
+  chan[0].note = 0;
+  chan[0].noteText = "S1";
+  chan[1].note = 1;
+  chan[1].noteText = "S2";
+  chan[2].note = 2;
+  chan[2].noteText = "S3";
+  chan[3].note = 3;
+  chan[3].noteText = "S4";
 }
 
 bool sequencer::getSlideActive() {

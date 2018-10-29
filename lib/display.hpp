@@ -8,6 +8,14 @@
 
 class displaySequencer{
 private:
+  //display symbols
+  const char emptyStepSymbol = '.';
+  const char filedStepSymbol = ',';
+  const char cursorEmptyStepSymbol = ':';
+  const char cursorFiledStepSymbol = ';';
+  const char activeStepSymbol = '|';
+  const char quarterSymbol = '=';
+
   int count = 0;
   bool debugDisplay = false;
   LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27,20,4);

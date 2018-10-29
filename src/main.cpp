@@ -1,7 +1,7 @@
 #include <Arduino.h>
 
 /*~~~~~~  DEBUGMODE   ~~~~~~*/
-bool mainDebug = false; //only accepts midi when set to true
+bool mainDebug = true; //only accepts midi when set to true
 
 //LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27,20,4);
 

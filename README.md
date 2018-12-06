@@ -1,5 +1,5 @@
 # ArduSequencer
-
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com) 
 This is the PlatfromIO-Project for a polyrhythmic 16-Step-Sequencer
 4 Buttons for each channel
 1 Button for switching between sequence editing and velocity editing

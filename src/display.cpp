@@ -1,4 +1,4 @@
-#include "..\lib\display.hpp"
+#include "../lib/display.hpp"
 
 
 #define STEP_LENGTH 16

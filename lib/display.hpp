@@ -1,9 +1,8 @@
-#include "..\lib\Encoder.h"
-//#include <Wire.h>
+#include <Encoder.h>
 #include <Wire.h>
-#include "LiquidCrystal_I2C.h"
-#include "..\lib\seq.hpp"
-#include "..\lib\midi.hpp"
+#include <LiquidCrystal_I2C.h>
+#include "../lib/seq.hpp"
+#include "../lib/midi.hpp"
 
 
 class displaySequencer{

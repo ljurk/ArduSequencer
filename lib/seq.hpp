@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include "..\lib\midi.hpp"
+#include "../lib/midi.hpp"
 
 #ifdef STEP_LENGTH
 #else

@@ -10,7 +10,7 @@ bool mainDebug = true; //only accepts midi when set to true
 //led mainSeq = led(mainDebug);
 
 /*~~~~~~~  DISPLAY   ~~~~~~~*/
-#include "..\lib\display.hpp"
+#include "../lib/display.hpp"
 displaySequencer* mainSeq;
 
 void setup() {

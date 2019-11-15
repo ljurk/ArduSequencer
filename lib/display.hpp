@@ -1,37 +1,57 @@
-#include "..\lib\Encoder.h"
-//#include <Wire.h>
-#include "..\lib\Adafruit_SSD1306.h"
-#include <Adafruit_GFX.h>
-#include "..\lib\seq.hpp"
-#include "..\lib\midi.hpp"
+#include <Encoder.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include "../lib/seq.hpp"
+#include "../lib/midi.hpp"
 
-#define OLED_ADDR   0x3C
 
 class displaySequencer{
 private:
+  //display symbols
+  const char emptyStepSymbol = '.';
+  const char filedStepSymbol = ',';
+  const char cursorEmptyStepSymbol = ':';
+  const char cursorFiledStepSymbol = ';';
+  const char activeStepSymbol = '|';
+  const char quarterSymbol = '=';
+
+  int count = 0;
   bool debugDisplay = false;
-  Adafruit_SSD1306 display = Adafruit_SSD1306(-1);
-  const int buttonPin = 10;
+  LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27,20,4);
+  const int encoderButtonPin = 10;
+  const int modeButtonPin = 8;
+  const byte channelPins[NUMBER_OF_CHANNELS] = {4,5,6,7};
+  bool channelButtonStates[NUMBER_OF_CHANNELS] = {false,false,false,false};
+  bool channelButtonPressed[NUMBER_OF_CHANNELS] = {false,false,false,false};
   Encoder myEnc = Encoder(2,3);
   unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
   int debounceDelay = 300;
-  int buttonState = 0;
-  bool buttonPressed = false;
-  long oldPosition  = -999;
-  long newPosition =  -999;
-  String seqString ="00000000";
-  String cursorString ="00000000";
+  bool encoderButtonState = false;
+  bool encoderButtonPressed = false;
+  bool modeButtonState = false;
+  bool modeButtonPressed = false;
+  long oldEncoderPos  = -999;
+  long newEncoderPos =  -999;
+  String seqString ="0000000000000000";
+  String cursorString ="0000000000000000";
   byte mode = 0;
+  bool somethingChanged = true;
+  bool activeStepChanged = true;
+  bool cursorChanged = true;
+  bool sequenceChanged = true;
+  bool valuesChanged = true;
   sequencer seq;
-public:
-  displaySequencer(bool debug);
+
   void step(byte pos);
-  void startingAnimation();
   void updateValues();
   void updateCursor();
   void updateSequence();
   void updateDisplay();
-  void run();
   void checkInputs();
   void updateActiveStep();
+public:
+  displaySequencer(bool debug);
+  void startingAnimation();
+  void run();
+
 };

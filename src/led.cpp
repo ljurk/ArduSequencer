@@ -2,7 +2,7 @@
 /*<><><><><><><><><<<version 0.23>>><><><><><><><><>*/
 /*<><><><><><><><><<<303>>><><><><><><><><>*/
 
-
+/*
 
 #include "..\lib\led.hpp"
 
@@ -57,7 +57,7 @@ void led::pressNext() {
     sprintf(buffer,"Old %x",seq.getOldMenuStep());
     Serial.println(buffer);
   }
-  if(seq.getGate(seq.getOldMenuStep())) {
+  if(seq.getGate(seq.getActiveChannel(), seq.getOldMenuStep())) {
     digitalWrite(ledPins[seq.getOldMenuStep()],HIGH);
   } else {
     digitalWrite(ledPins[seq.getOldMenuStep()],LOW);
@@ -70,7 +70,7 @@ void led::pressPrev(){
     sprintf(buffer,"Old %x",seq.getOldMenuStep());
     Serial.println(buffer);
   }
-  if(seq.getGate(seq.getOldMenuStep()))  {
+  if(seq.getGate(seq.getActiveChannel(), seq.getOldMenuStep()))  {
     digitalWrite(ledPins[seq.getOldMenuStep()],HIGH);
   } else {
     digitalWrite(ledPins[seq.getOldMenuStep()],LOW);
@@ -79,7 +79,7 @@ void led::pressPrev(){
 void led::showSequence() {
   for(int i = 0; i < STEP_LENGTH; i++) {
    if(i != seq.getActiveMenuStep()) {
-      if(seq.getGate(i)) {
+      if(seq.getGate(seq.getActiveChannel(), i)) {
         if(i == seq.getActiveStep()) {
             digitalWrite(ledPins[i], LOW);
           } else {
@@ -97,7 +97,7 @@ void led::showSequence() {
 }
 void led::blinkPin(byte blink, byte unblink) {
   digitalWrite(ledPins[blink],HIGH);
-  if(seq.getGate(unblink) == false) {
+  if(seq.getGate(seq.getActiveChannel(), unblink) == false) {
     digitalWrite(ledPins[unblink],LOW);
   }
 }
@@ -147,7 +147,7 @@ void led::checkButtons(){
         if(seq.getStopped()) {
           seq.defaultNoteDown();
         }
-        seq.noteDown();
+        seq.setNoteDown();
       } else {
         //NoteUp
         if(debugLed) {
@@ -156,7 +156,7 @@ void led::checkButtons(){
         if(seq.getStopped()) {
           seq.defaultNoteUp();
         }
-        seq.noteUp();
+        seq.setNoteUp();
       }
       noteUpDownButtonPressed = true;
     }
@@ -181,7 +181,7 @@ void led::checkButtons(){
         }
         showSequence();
         seq.setGate();
-        digitalWrite(ledPins[seq.getActiveMenuStep()],seq.getGate(seq.getActiveMenuStep()));
+        digitalWrite(ledPins[seq.getActiveMenuStep()],seq.getGate(seq.getActiveChannel(), seq.getActiveMenuStep()));
         seq.setNote();
       }
       setSlideButtonPressed = true;
@@ -205,7 +205,7 @@ void led::checkButtons(){
         if(debugLed) {
           Serial.println("PRESS PREV");
         }
-        seq.prevStep();
+        seq.setCursor(PREV);
         pressPrev();
       }else{
         //next Step
@@ -215,7 +215,7 @@ void led::checkButtons(){
             Serial.println(buffer);
           }
         }
-        seq.nextStep();
+        seq.setCursor(NEXT);
         pressNext();
       }
       nextPrevButtonPressed = true;
@@ -252,3 +252,4 @@ void led::run(){
     }
   }
 }
+*/

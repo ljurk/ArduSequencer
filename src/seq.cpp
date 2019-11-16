@@ -11,6 +11,7 @@ sequencer::sequencer(bool dbg) {
             chan[y].slide[i] = false;
             chan[y].velocity[i] = DEFAULT_VELOCITY;
             chan[y].length = STEP_LENGTH;
+            chan[y].numberOfGates = 0;
         }
         chan[y].activeStep = 0;
         chan[y].oldStep = 0;
@@ -135,6 +136,30 @@ void sequencer::setLength(int steps) {
 
 void sequencer::setGate() {
     chan[activeChannel].gate[cursorPos] = ! chan[activeChannel].gate[cursorPos];
+}
+
+void sequencer::euclidAddGate(){
+    if (seqDebug) {
+        Serial.print("add euclidean note");
+    }
+    resetSequence();
+    chan[activeChannel].numberOfGates += 1;
+    for (byte i = 0; i < chan[activeChannel].numberOfGates; i++) {
+        byte step = i * ( chan[activeChannel].length / chan[activeChannel].numberOfGates);
+        chan[activeChannel].gate[step] = true;
+    }
+
+}
+void sequencer::euclidRemoveGate(){
+    if (seqDebug) {
+        Serial.print("add euclidean note");
+    }
+    resetSequence();
+    chan[activeChannel].numberOfGates -= 1;
+    for (byte i = 0; i < chan[activeChannel].numberOfGates; i++) {
+        byte step = i * ( chan[activeChannel].length / chan[activeChannel].numberOfGates);
+        chan[activeChannel].gate[step] = true;
+    }
 }
 
 void sequencer::setNote() {

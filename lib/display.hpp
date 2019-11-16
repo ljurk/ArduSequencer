@@ -18,7 +18,7 @@ private:
   int count = 0;
   bool debugDisplay = false;
   LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27,20,4);
-  const int encoderButtonPin = 9;
+  const int encoderButtonPin = 13;
   const int modeButtonPin = 8;
   Encoder myEnc = Encoder(2, 3);
 
@@ -39,6 +39,7 @@ private:
   long newEncoderPos =  -999;
   String seqString ="0000000000000000";
   String cursorString ="0000000000000000";
+  // 0=sequencer;1=velocity;3=euclidean
   byte mode = 0;
   bool somethingChanged = true;
   bool activeStepChanged = true;

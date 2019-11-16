@@ -23,6 +23,7 @@ struct seqChannel {
   bool slide[STEP_LENGTH];
   byte velocity[STEP_LENGTH];
   byte length;
+  byte numberOfGates;
   byte activeStep;
   byte oldStep;
   bool mute;
@@ -68,6 +69,8 @@ public:
   void step(byte channel);
 
   //set, always depends on activeChannel and cursorPos
+  void euclidAddGate();
+  void euclidRemoveGate();
   void setNoteDown();
   void setNoteUp();
   void setVelocityUp(int steps = 1);

@@ -10,10 +10,11 @@ displaySequencer::displaySequencer(bool debug) {
     seq = sequencer(debug);
 
     // initialize channels
-    channels[0] = {4, false, false, false};
-    channels[1] = {5, false, false, false};
-    channels[2] = {6, false, false, false};
-    channels[3] = {7, false, false, false};
+    // {pin, muted, buttonPressed, buttonState}
+    channels[0] = {9, false, false, false};
+    channels[1] = {10, false, false, false};
+    channels[2] = {11, false, false, false};
+    channels[3] = {12, false, false, false};
 
     // display
     lcd.init();
@@ -43,46 +44,48 @@ displaySequencer::displaySequencer(bool debug) {
 }
 
 void displaySequencer::updateValues() {
-  String outNote;
-  for (int i = 0; i < NUMBER_OF_CHANNELS; i++) {
-    lcd.setCursor(0, i);
-    if (i == seq.getActiveChannel()) {
-      if (seq.getVelocity(seq.getActiveChannel(), seq.getCursorPos()) < 10) {
-        outNote= "V";
-        if (seq.getMute(i)) {
-            outNote.toLowerCase();
+    String outNote;
+    for (int i = 0; i < NUMBER_OF_CHANNELS; i++) {
+        lcd.setCursor(0, i);
+        if (i == seq.getActiveChannel()) {
+            if (seq.getVelocity(seq.getActiveChannel(), seq.getCursorPos()) < 10) {
+                outNote= "V";
+                if (seq.getMute(i)) {
+                    outNote.toLowerCase();
+                }
+                outNote += String(seq.getVelocity(seq.getActiveChannel(), seq.getCursorPos()));
+                // outNote += String(seq.getActiveStep(i));
+                outNote += " ";
+            }else if (seq.getVelocity(seq.getActiveChannel(), seq.getCursorPos()) < 100) {
+                outNote= "V";
+                if (seq.getMute(i)) {
+                    outNote.toLowerCase();
+                }
+                outNote += String(seq.getVelocity(seq.getActiveChannel(), seq.getCursorPos()));
+            } else {
+                outNote = String(seq.getVelocity(seq.getActiveChannel(), seq.getCursorPos()));
+            }
+            if (mode == 0) {
+                outNote += ">";
+            } else if (mode == 1){
+                outNote += "<";
+            } else {
+                outNote += "e";
+            }
+        } else {
+            outNote = seq.getNoteText(i);
+            if (seq.getMute(i)) {
+                outNote.toLowerCase();
+            }
+            if (seq.getNoteTextLength(i) == 2) {
+                outNote += "  ";
+            }
+            if (seq.getNoteTextLength(i) == 3) {
+                outNote += " ";
+            }
         }
-        outNote += String(seq.getVelocity(seq.getActiveChannel(), seq.getCursorPos()));
-        // outNote += String(seq.getActiveStep(i));
-        outNote += " ";
-      }else if (seq.getVelocity(seq.getActiveChannel(), seq.getCursorPos()) < 100) {
-          outNote= "V";
-          if (seq.getMute(i)) {
-              outNote.toLowerCase();
-          }
-          outNote += String(seq.getVelocity(seq.getActiveChannel(), seq.getCursorPos()));
-      } else {
-          outNote = String(seq.getVelocity(seq.getActiveChannel(), seq.getCursorPos()));
-      }
-      if (mode == 0) {
-        outNote += ">";
-      } else {
-        outNote += "<";
-      }
-    } else {
-      outNote = seq.getNoteText(i);
-      if (seq.getMute(i)) {
-        outNote.toLowerCase();
-      }
-      if (seq.getNoteTextLength(i) == 2) {
-        outNote += "  ";
-      }
-      if (seq.getNoteTextLength(i) == 3) {
-        outNote += " ";
-      }
+        lcd.print(outNote);
     }
-    lcd.print(outNote);
-  }
 }
 
 void displaySequencer::updateActiveStep() {
@@ -223,6 +226,10 @@ void displaySequencer::checkInputs() {
             seq.setCursorPos(NEXT);
             cursorChanged = true;
           }
+          if (mode == 2) {  // euclidean
+            seq.euclidAddGate();
+            sequenceChanged = true;
+          }
         }
 
         for (int i = 0; i < NUMBER_OF_CHANNELS; i++) {
@@ -262,6 +269,10 @@ void displaySequencer::checkInputs() {
             seq.setCursorPos(PREV);
             cursorChanged = true;
           }
+          if (mode == 2) {  // euclidean
+            seq.euclidRemoveGate();
+            sequenceChanged = true;
+          }
         }
 
         for (int i = 0; i < NUMBER_OF_CHANNELS; i++) {
@@ -297,10 +308,13 @@ void displaySequencer::checkInputs() {
       if (mode == 0) {
         // velocity
         mode = 1;
-      } else {
+      } else if (mode == 1){
         // sequence
-        mode = 0;
+        mode = 2;
+      } else {
+          mode = 0;
       }
+
       if (debugDisplay) {
         for (int i= 0; i< 12; i++) {
               seq.clock();

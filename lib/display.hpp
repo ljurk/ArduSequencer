@@ -18,12 +18,17 @@ private:
   int count = 0;
   bool debugDisplay = false;
   LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27,20,4);
-  const int encoderButtonPin = 10;
+  const int encoderButtonPin = 9;
   const int modeButtonPin = 8;
-  const byte channelPins[NUMBER_OF_CHANNELS] = {4,5,6,7};
-  bool channelButtonStates[NUMBER_OF_CHANNELS] = {false,false,false,false};
-  bool channelButtonPressed[NUMBER_OF_CHANNELS] = {false,false,false,false};
-  Encoder myEnc = Encoder(2,3);
+  Encoder myEnc = Encoder(2, 3);
+
+  struct channel {
+    int pin;
+    bool muted;
+    bool buttonPressed;
+    bool buttonState;
+  };
+  channel channels[NUMBER_OF_CHANNELS];
   unsigned long lastDebounceTime = 0;  // the last time the output pin was toggled
   int debounceDelay = 300;
   bool encoderButtonState = false;

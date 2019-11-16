@@ -9,6 +9,12 @@ displaySequencer::displaySequencer(bool debug) {
     debugDisplay = debug;
     seq = sequencer(debug);
 
+    // initialize channels
+    channels[0] = {4, false, false, false};
+    channels[1] = {5, false, false, false};
+    channels[2] = {6, false, false, false};
+    channels[3] = {7, false, false, false};
+
     // display
     lcd.init();
     lcd.backlight();
@@ -22,7 +28,7 @@ displaySequencer::displaySequencer(bool debug) {
     // sequencer
     seq.setActiveChannel(0);
     for (int i = 0; i < NUMBER_OF_CHANNELS; i++) {
-      pinMode(channelPins[i], INPUT);
+      pinMode(channels[i].pin, INPUT);
     }
 
     if (debugDisplay) {
@@ -33,6 +39,7 @@ displaySequencer::displaySequencer(bool debug) {
       // set MIDI baud
       Serial.begin(31250);
     }
+
 }
 
 void displaySequencer::updateValues() {
@@ -181,7 +188,7 @@ void displaySequencer::checkInputs() {
     encoderButtonState = digitalRead(encoderButtonPin);
     modeButtonState = digitalRead(modeButtonPin);
     for (int i = 0; i < NUMBER_OF_CHANNELS; i++) {
-      channelButtonStates[i] = digitalRead(channelPins[i]);
+      channels[i].buttonState = digitalRead(channels[i].pin);
     }
 
     // encoder
@@ -219,7 +226,7 @@ void displaySequencer::checkInputs() {
         }
 
         for (int i = 0; i < NUMBER_OF_CHANNELS; i++) {
-          if (channelButtonStates[i] == HIGH) {
+          if (channels[i].buttonState == HIGH) {
             sequenceChanged = true;
             cursorChanged = true;
             seq.setLength(seq.getLength(i) + 1);
@@ -258,7 +265,7 @@ void displaySequencer::checkInputs() {
         }
 
         for (int i = 0; i < NUMBER_OF_CHANNELS; i++) {
-          if (channelButtonStates[i] == HIGH) {
+          if (channels[i].buttonState == HIGH) {
             sequenceChanged = true;
             cursorChanged = true;
             seq.setLength(seq.getLength(i) - 1);
@@ -305,7 +312,7 @@ void displaySequencer::checkInputs() {
       modeButtonPressed = false;
     }
     for (int i = 0; i < NUMBER_OF_CHANNELS; i++) {
-      if (channelButtonStates[i] == HIGH && channelButtonPressed[i] == false) {
+      if (channels[i].buttonState == HIGH && channels[i].buttonPressed == false) {
         if (mode == 0) {
           cursorChanged = true;
           valuesChanged = true;
@@ -320,9 +327,9 @@ void displaySequencer::checkInputs() {
         }
 
         // lcd.setCursor(seq.getCursorPos(), seq.getActiveChannel());
-        channelButtonPressed[i] = true;
-      } else if (channelButtonStates[i] == LOW) {
-        channelButtonPressed[i] = false;
+        channels[i].buttonPressed = true;
+      } else if (channels[i].buttonState == LOW) {
+        channels[i].buttonPressed = false;
       }
     }
     updateDisplay();
